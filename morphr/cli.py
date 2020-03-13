@@ -1,5 +1,9 @@
+from morphr.configuration import Configuration
+
+
 def main():
-    raise NotImplementedError()
+    configuration = Configuration.load('configuration.json')
+    configuration.run()
 
 
 if __name__ == '__main__':
