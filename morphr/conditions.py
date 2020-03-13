@@ -71,6 +71,52 @@ class PointOnSurfaceSupport(eq.Objective):
         return p.f
 
 
+
+
+class DisplacementCoupling(eq.Objective):
+    def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight):
+        eq.Objective.__init__(self)
+        self.nodes_a = nodes_a
+        self.nodes_b = nodes_b
+        self.shape_functions_a = shape_functions_a
+        self.shape_functions_b = shape_functions_b
+        self.weight = weight
+        variables = []
+        for node in nodes_a + nodes_b:
+            variables += [node.x, node.y, node.z]
+        self.variables = variables
+
+    @property
+    def act_a(self):
+        return evaluate_act(self.nodes_a, self.shape_functions_a[0])
+
+    @property
+    def act_b(self):
+        return evaluate_act(self.nodes_b, self.shape_functions_b[0])
+
+    def evaluate_act_a_2(self, index):
+        nb_dofs_a = len(self.nodes_a) * 3
+        nb_dofs_b = len(self.nodes_b) * 3
+        return evaluate_act_2(self.nodes_a, self.shape_functions_a[index], nb_dofs_a + nb_dofs_b, 0)
+
+    def evaluate_act_b_2(self, index):
+        nb_dofs_a = len(self.nodes_a) * 3
+        nb_dofs_b = len(self.nodes_b) * 3
+        return evaluate_act_2(self.nodes_b, self.shape_functions_b[index], nb_dofs_a + nb_dofs_b, nb_dofs_a)
+
+    def compute(self, g, h):
+        ax = self.evaluate_act_a_2(0)
+        bx = self.evaluate_act_b_2(0)
+
+        delta = bx - ax
+
+        p = np.dot(delta, delta) * self.weight / 2
+
+        g[:] = p.g
+        h[:] = p.h
+        return p.f
+
+
 class EdgeRotationCoupling(eq.Objective):
     def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight):
         eq.Objective.__init__(self)
