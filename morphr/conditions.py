@@ -71,6 +71,87 @@ class PointOnSurfaceSupport(eq.Objective):
         return p.f
 
 
+class EdgeRotationCoupling(eq.Objective):
+    def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight):
+        eq.Objective.__init__(self)
+        self.nodes_a = nodes_a
+        self.nodes_b = nodes_b
+        self.shape_functions_a = shape_functions_a
+        self.shape_functions_b = shape_functions_b
+        self.weight = weight
+        variables = []
+        for node in nodes_a + nodes_b:
+            variables += [node.x, node.y, node.z]
+        self.variables = variables
+
+        ref_a1_a = self.evaluate_ref_a(1)
+        ref_a2_a = self.evaluate_ref_a(2)
+        self.ref_a3_a = np.cross(ref_a1_a, ref_a2_a)
+        self.ref_a3_a /= np.linalg.norm(self.ref_a3_a)
+
+        ref_a1_b = self.evaluate_ref_b(1)
+        ref_a2_b = self.evaluate_ref_b(2)
+        self.ref_a3_b = np.cross(ref_a1_b, ref_a2_b)
+        self.ref_a3_b /= np.linalg.norm(self.ref_a3_b)
+
+        self.t2_edge = t2_edge
+
+    @property
+    def act_a(self):
+        return evaluate_act(self.nodes_a, self.shape_functions_a[0])
+
+    @property
+    def act_b(self):
+        return evaluate_act(self.nodes_b, self.shape_functions_b[0])
+
+    def evaluate_ref_a(self, index):
+        return evaluate_ref(self.nodes_a, self.shape_functions_a[index])
+
+    def evaluate_ref_b(self, index):
+        return evaluate_ref(self.nodes_b, self.shape_functions_b[index])
+
+    def evaluate_act_a_2(self, index):
+        nb_dofs_a = len(self.nodes_a) * 3
+        nb_dofs_b = len(self.nodes_b) * 3
+        return evaluate_act_2(self.nodes_a, self.shape_functions_a[index], nb_dofs_a + nb_dofs_b, 0)
+
+    def evaluate_act_b_2(self, index):
+        nb_dofs_a = len(self.nodes_a) * 3
+        nb_dofs_b = len(self.nodes_b) * 3
+        return evaluate_act_2(self.nodes_b, self.shape_functions_b[index], nb_dofs_a + nb_dofs_b, nb_dofs_a)
+
+    def compute(self, g, h):
+        a1_a = self.evaluate_act_a_2(1)
+        a2_a = self.evaluate_act_a_2(2)
+
+        a3_a = np.cross(a1_a, a2_a)
+        a3_a /= np.linalg.norm(a3_a)
+
+        a1_b = self.evaluate_act_b_2(1)
+        a2_b = self.evaluate_act_b_2(2)
+
+        a3_b = np.cross(a1_b, a2_b)
+        a3_b /= np.linalg.norm(a3_b)
+
+        w_a = a3_a - self.ref_a3_a
+        w_b = a3_b - self.ref_a3_b
+
+        omega_a = np.cross(self.ref_a3_a, w_a)
+        omega_b = np.cross(self.ref_a3_b, w_b)
+
+        angle_a = np.arcsin(np.dot(omega_a, self.t2_edge))
+        angle_b = np.arcsin(np.dot(omega_b, self.t2_edge))
+
+        angular_difference = angle_a - angle_b
+
+        p = angular_difference**2 * self.weight / 2
+
+        g[:] = p.g
+        h[:] = p.h
+        h.fill(0)
+        return p.f
+
+
 class Shell3P3D(eq.Objective):
     def __init__(self, nodes, shape_functions, thickness, youngs_modulus, poissons_ratio, weight):
         eq.Objective.__init__(self)
