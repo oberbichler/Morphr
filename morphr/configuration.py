@@ -186,3 +186,13 @@ class ExportMdpa(Task):
             f.write('End NodalData\n')
 
 
+class ImportIbra(Task):
+    path: str
+
+    def run(self, config, job, data):
+        model = an.Model()
+        model.load(self.path)
+
+        data['cad_model'] = model
+
+
