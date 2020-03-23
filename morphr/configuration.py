@@ -209,7 +209,7 @@ class ExportIbra(Task):
         model.save(self.path)
 
 
-class NonlinearSolve(Task):
+class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
 
