@@ -8,7 +8,7 @@ from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
 from pydantic import BaseModel
-from morphr.conditions import NormalCoupling, DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D, EdgeRotationCoupling, InPlaneDisplacementCoupling, OutOfPlaneDisplacementCoupling
+from morphr.conditions import DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D, EdgeRotationCoupling
 
 
 init()
@@ -419,6 +419,7 @@ class ApplyShell3P3D(Task):
 class ApplyEdgeCoupling(Task):
     penalty_displacement: float = 1.0
     penalty_rotation: float = 1.0
+    debug: bool = False
 
     def run(self, config, job, data):
         model_tolerance = job.model_tolerance
@@ -428,7 +429,7 @@ class ApplyEdgeCoupling(Task):
 
         # FIXME: Check for None
 
-        data['nodes'] = data.get('nodes', {})
+        data['nodes'] = nodes = data.get('nodes', {})
         data['elements'] = elements = data.get('elements', [])
 
         for key, edge in cad_model.of_type('BrepEdge'):
@@ -440,29 +441,29 @@ class ApplyEdgeCoupling(Task):
             nurbs_surface_key_a, nurbs_surface_a = trim_a.surface_geometry
             nurbs_surface_key_b, nurbs_surface_b = trim_b.surface_geometry
 
-            if nurbs_surface_a not in data['nodes']:
-                nodes = []
+            if nurbs_surface_a not in nodes:
+                nurbs_surface_nodes = []
 
                 for x, y, z in nurbs_surface_a.poles:
-                    nodes.append(eq.Node(x, y, z))
+                    nurbs_surface_nodes.append(eq.Node(x, y, z))
 
-                nurbs_surface_nodes_a = np.array(nodes, object)
+                nurbs_surface_nodes_a = np.array(nurbs_surface_nodes, object)
 
-                data['nodes'][nurbs_surface_a] = nodes
+                nodes[nurbs_surface_a] = nurbs_surface_nodes
             else:
-                nurbs_surface_nodes_a = data['nodes'][nurbs_surface_a]
+                nurbs_surface_nodes_a = nodes[nurbs_surface_a]
 
-            if nurbs_surface_b not in data['nodes']:
-                nodes = []
+            if nurbs_surface_b not in nodes:
+                nurbs_surface_nodes = []
 
                 for x, y, z in nurbs_surface_b.poles:
-                    nodes.append(eq.Node(x, y, z))
+                    nurbs_surface_nodes.append(eq.Node(x, y, z))
 
-                nurbs_surface_nodes_b = np.array(nodes, object)
+                nurbs_surface_nodes_b = np.array(nurbs_surface_nodes, object)
 
-                data['nodes'][nurbs_surface_b] = nodes
+                nodes[nurbs_surface_b] = nurbs_surface_nodes
             else:
-                nurbs_surface_nodes_b = data['nodes'][nurbs_surface_b]
+                nurbs_surface_nodes_b = nodes[nurbs_surface_b]
 
             integration_points_a, integration_points_b = an.integration_points(edge, tolerance=model_tolerance)
 
@@ -477,25 +478,24 @@ class ApplyEdgeCoupling(Task):
                 element_nodes_b = [nurbs_surface_nodes_b[i] for i in indices_b]
 
                 if penalty_displacement != 0:
-                    # element = DisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
-                    # elements.append(element)
-
-                    element = OutOfPlaneDisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
+                    element = DisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
                     elements.append(element)
-
-                # cad_model.add(an.Point3D(element.act_a), r'''{"layer": "points_a"}''')
-                # cad_model.add(an.Point3D(element.act_b), r'''{"layer": "points_b"}''')
 
                 if penalty_rotation != 0:
                     _, t2_edge = trim_a.curve_3d.derivatives_at(t_a, order=1)
                     t2_edge /= np.linalg.norm(t2_edge)
 
-                    # element = EdgeRotationCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight * penalty_rotation)
-                    # elements.append(element)
+                    element = EdgeRotationCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight * penalty_rotation)
+                    elements.append(element)
 
-                    # element = NormalCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_rotation)
-                    # elements.append(element)
+                    if self.debug:
+                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "EdgeCoupling.RotationAxis"}')
 
-                point = nurbs_surface_a.point_at(u_a, v_a)
-                # cad_model.add(an.Line3D(point, point+t2_edge), r'''{"layer": "rotation_axis"}''')
-                cad_model.add(an.Point3D(point), r'''{"layer": "IgaDisplacementCoupling"}''')
+                if self.debug:
+                    point_a = nurbs_surface_a.point_at(u_a, v_a)
+                    point_b = nurbs_surface_b.point_at(u_b, v_b)
+                    cad_model.add(an.Point3D(point_a), r'{"layer": "EdgeCoupling.PointsA"}')
+                    cad_model.add(an.Point3D(point_b), r'{"layer": "EdgeCoupling.PointsB"}')
+
+                    if penalty_rotation != 0:
+                        cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "EdgeCoupling.RotationAxis"}')
