@@ -280,7 +280,7 @@ class ApplyMeshDisplacement(Task):
             box_max = np.max(vabc, axis=0)
 
             if self.debug:
-                cad_model.add(an.Box3D(box_min, box_max), '''{"layer": "boxes"}''')
+                cad_model.add(an.Box3D(box_min, box_max), r'{"layer": "Debug/ApplyMeshDisplacement/Boxes"}')
 
             rtree.add(box_min, box_max)
 
@@ -306,7 +306,9 @@ class ApplyMeshDisplacement(Task):
 
             for u, v, weight in an.integration_points(face, model_tolerance):
                 location = surface_geometry.point_at(u, v)
-                #cad_model.add(an.Point3D(location), '''{"layer": "integration_points"}''')
+
+                if self.debug:
+                    cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
                 indices = rtree.by_point(location, model_tolerance)
 
@@ -368,11 +370,10 @@ class ApplyMeshDisplacement(Task):
                 span_data[span] = old_data + [element_data]
 
                 if self.debug:
-                    cad_model.add(an.Point3D(location_source), '''{"layer": "closest_point"}''')
-                    cad_model.add(an.Line3D(location_source, location_target), '''{"layer": "displacement_field"}''')
-                    cad_model.add(an.Line3D(location, location_source), '''{"layer": "projection"}''')
+                    cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/ClosestPoints"}')
+                    cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementFields"}')
+                    cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projections"}')
 
-                # element = eq.PointSupport(nodes[nonzero_indices], [element_data])
                 element = PointOnSurfaceSupport(nodes[nonzero_indices], shape_functions, min_location + displacement, weight * penalty)
                 elements.append(element)
 
@@ -489,13 +490,13 @@ class ApplyEdgeCoupling(Task):
                     elements.append(element)
 
                     if self.debug:
-                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "EdgeCoupling.RotationAxis"}')
+                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
 
                 if self.debug:
                     point_a = nurbs_surface_a.point_at(u_a, v_a)
                     point_b = nurbs_surface_b.point_at(u_b, v_b)
-                    cad_model.add(an.Point3D(point_a), r'{"layer": "EdgeCoupling.PointsA"}')
-                    cad_model.add(an.Point3D(point_b), r'{"layer": "EdgeCoupling.PointsB"}')
+                    cad_model.add(an.Point3D(point_a), r'{"layer": "Debug/ApplyEdgeCoupling/PointsA"}')
+                    cad_model.add(an.Point3D(point_b), r'{"layer": "Debug/ApplyEdgeCoupling/PointsB"}')
 
                     if penalty_rotation != 0:
-                        cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "EdgeCoupling.RotationAxis"}')
+                        cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
