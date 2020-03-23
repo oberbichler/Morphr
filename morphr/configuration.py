@@ -132,12 +132,12 @@ class ImportDisplacementField(Task):
 
         faces = []
 
-        if 'triangle' in mesh_0.cells:
-            for a, b, c in mesh_0.cells['triangle']:
+        if 'triangle' in mesh_0.cells_dict:
+            for a, b, c in mesh_0.cells_dict['triangle']:
                 faces.append([a, b, c])
 
-        if 'quad' in mesh_0.cells:
-            for a, b, c, d in mesh_0.cells['quad']:
+        if 'quad' in mesh_0.cells_dict:
+            for a, b, c, d in mesh_0.cells_dict['quad']:
                 faces.append([a, b, c])
                 faces.append([c, d, a])
 
