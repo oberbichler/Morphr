@@ -71,8 +71,6 @@ class PointOnSurfaceSupport(eq.Objective):
         return p.f
 
 
-
-
 class DisplacementCoupling(eq.Objective):
     def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight):
         eq.Objective.__init__(self)
