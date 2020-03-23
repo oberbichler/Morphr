@@ -8,7 +8,7 @@ from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
 from pydantic import BaseModel
-from morphr.conditions import NormalCoupling, DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D as Shell, EdgeRotationCoupling, InPlaneDisplacementCoupling, OutOfPlaneDisplacementCoupling
+from morphr.conditions import NormalCoupling, DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D, EdgeRotationCoupling, InPlaneDisplacementCoupling, OutOfPlaneDisplacementCoupling
 
 
 init()
@@ -231,7 +231,7 @@ class NonlinearSolve(Task):
                 surface.set_pole(i, node.act_location)
 
 
-class MeshDisplacementConditions(Task):
+class ApplyMeshDisplacement(Task):
     penalty: float = 1
     debug: bool = False
 
@@ -377,7 +377,7 @@ class MeshDisplacementConditions(Task):
                 elements.append(element)
 
 
-class Shell3P3D(Task):
+class ApplyShell3P3D(Task):
     thickness: float
     youngs_modulus: float
     poissons_ratio: float
@@ -412,11 +412,11 @@ class Shell3P3D(Task):
             for u, v, weight in an.integration_points(face, model_tolerance):
                 nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
 
-                element = Shell(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
+                element = Shell3P3D(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
                 elements.append(element)
 
 
-class EdgeCoupling(Task):
+class ApplyEdgeCoupling(Task):
     penalty_displacement: float = 1.0
     penalty_rotation: float = 1.0
 
