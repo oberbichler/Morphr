@@ -42,10 +42,11 @@ def evaluate_act_2(nodes, shape_functions, size, offset):
 class PointOnSurfaceSupport(eq.Objective):
     def __init__(self, nodes, shape_functions, target, weight):
         eq.Objective.__init__(self)
-        self.nodes = nodes
-        self.shape_functions = shape_functions
-        self.target = target
-        self.weight = weight
+        self.nodes = np.asarray(nodes, object)
+        self.shape_functions = np.asarray(shape_functions, float)
+        self.target = np.asarray(target, float)
+        self.weight = float(weight)
+
         variables = []
         for node in nodes:
             variables += [node.x, node.y, node.z]
@@ -74,11 +75,12 @@ class PointOnSurfaceSupport(eq.Objective):
 class DisplacementCoupling(eq.Objective):
     def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight):
         eq.Objective.__init__(self)
-        self.nodes_a = nodes_a
-        self.nodes_b = nodes_b
-        self.shape_functions_a = shape_functions_a
-        self.shape_functions_b = shape_functions_b
-        self.weight = weight
+        self.nodes_a = np.asarray(nodes_a, object)
+        self.nodes_b = np.asarray(nodes_b, object)
+        self.shape_functions_a = np.asarray(shape_functions_a, float)
+        self.shape_functions_b = np.asarray(shape_functions_b, float)
+        self.weight = float(weight)
+
         variables = []
         for node in nodes_a + nodes_b:
             variables += [node.x, node.y, node.z]
@@ -138,7 +140,7 @@ class EdgeRotationCoupling(eq.Objective):
         self.ref_a3_b = np.cross(ref_a1_b, ref_a2_b)
         self.ref_a3_b /= np.linalg.norm(self.ref_a3_b)
 
-        self.t2_edge = t2_edge
+        self.t2_edge = np.asarray(t2_edge, float)
 
     @property
     def act_a(self):
@@ -168,14 +170,12 @@ class EdgeRotationCoupling(eq.Objective):
         a1_a = self.evaluate_act_a_2(1)
         a2_a = self.evaluate_act_a_2(2)
 
-        a3_a = np.cross(a1_a, a2_a)
-        a3_a /= np.linalg.norm(a3_a)
+        a3_a = normalized(np.cross(a1_a, a2_a))
 
         a1_b = self.evaluate_act_b_2(1)
         a2_b = self.evaluate_act_b_2(2)
 
-        a3_b = np.cross(a1_b, a2_b)
-        a3_b /= np.linalg.norm(a3_b)
+        a3_b = normalized(np.cross(a1_b, a2_b))
 
         w_a = a3_a - self.ref_a3_a
         w_b = a3_b - self.ref_a3_b
@@ -192,19 +192,19 @@ class EdgeRotationCoupling(eq.Objective):
 
         g[:] = p.g
         h[:] = p.h
-        h.fill(0)
         return p.f
 
 
 class Shell3P3D(eq.Objective):
     def __init__(self, nodes, shape_functions, thickness, youngs_modulus, poissons_ratio, weight):
         eq.Objective.__init__(self)
-        self.nodes = nodes
-        self.shape_functions = shape_functions
-        self.thickness = thickness
-        self.youngs_modulus = youngs_modulus
-        self.poissons_ratio = poissons_ratio
-        self.weight = weight
+        self.nodes = np.asarray(nodes, object)
+        self.shape_functions = np.asarray(shape_functions, float)
+        self.thickness = float(thickness)
+        self.youngs_modulus = float(youngs_modulus)
+        self.poissons_ratio = float(poissons_ratio)
+        self.weight = float(weight)
+
         variables = []
         for node in nodes:
             variables += [node.x, node.y, node.z]
