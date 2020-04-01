@@ -218,6 +218,9 @@ class SolveNonlinear(Task):
 
         problem = eq.Problem(elements, nb_threads=1)
 
+        print(f'{len(elements)} conditions')
+        print(f'{problem.nb_variables} variables')
+
         eq.Log.info_level = 5
 
         solver = eq.NewtonRaphson(problem)
