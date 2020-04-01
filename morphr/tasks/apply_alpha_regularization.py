@@ -6,7 +6,6 @@ import anurbs as an
 
 class ApplyAlphaRegularization(Task):
     penalty: float = 1.0
-    debug: bool = False
 
     def run(self, config, job, data):
         cad_model = data.get('cad_model', None)
