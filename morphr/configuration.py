@@ -90,6 +90,7 @@ class Job(Entry):
 
 
 class Task(Entry):
+    debug: bool = False
     info_level: Optional[int]
 
     def log(self, job, message):
