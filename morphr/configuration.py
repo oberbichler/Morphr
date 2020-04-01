@@ -8,7 +8,7 @@ from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
 from pydantic import BaseModel
-from morphr.conditions import NormalCoupling, DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D as Shell, EdgeRotationCoupling, InPlaneDisplacementCoupling, OutOfPlaneDisplacementCoupling
+from morphr.conditions import DisplacementCoupling, PointOnSurfaceSupport, Shell3P3D, EdgeRotationCoupling, PointOnSurfaceNodeCoupling
 
 
 init()
@@ -132,12 +132,12 @@ class ImportDisplacementField(Task):
 
         faces = []
 
-        if 'triangle' in mesh_0.cells:
-            for a, b, c in mesh_0.cells['triangle']:
+        if 'triangle' in mesh_0.cells_dict:
+            for a, b, c in mesh_0.cells_dict['triangle']:
                 faces.append([a, b, c])
 
-        if 'quad' in mesh_0.cells:
-            for a, b, c, d in mesh_0.cells['quad']:
+        if 'quad' in mesh_0.cells_dict:
+            for a, b, c, d in mesh_0.cells_dict['quad']:
                 faces.append([a, b, c])
                 faces.append([c, d, a])
 
@@ -209,7 +209,7 @@ class ExportIbra(Task):
         model.save(self.path)
 
 
-class NonlinearSolve(Task):
+class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
 
@@ -217,6 +217,9 @@ class NonlinearSolve(Task):
         elements = data.get('elements', None)
 
         problem = eq.Problem(elements, nb_threads=1)
+
+        print(f'{len(elements)} conditions')
+        print(f'{problem.nb_variables} variables')
 
         eq.Log.info_level = 5
 
@@ -231,7 +234,7 @@ class NonlinearSolve(Task):
                 surface.set_pole(i, node.act_location)
 
 
-class MeshDisplacementConditions(Task):
+class ApplyMeshDisplacement(Task):
     penalty: float = 1
     debug: bool = False
 
@@ -280,7 +283,7 @@ class MeshDisplacementConditions(Task):
             box_max = np.max(vabc, axis=0)
 
             if self.debug:
-                cad_model.add(an.Box3D(box_min, box_max), '''{"layer": "boxes"}''')
+                cad_model.add(an.Box3D(box_min, box_max), r'{"layer": "Debug/ApplyMeshDisplacement/Boxes"}')
 
             rtree.add(box_min, box_max)
 
@@ -306,7 +309,9 @@ class MeshDisplacementConditions(Task):
 
             for u, v, weight in an.integration_points(face, model_tolerance):
                 location = surface_geometry.point_at(u, v)
-                #cad_model.add(an.Point3D(location), '''{"layer": "integration_points"}''')
+
+                if self.debug:
+                    cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
                 indices = rtree.by_point(location, model_tolerance)
 
@@ -368,16 +373,15 @@ class MeshDisplacementConditions(Task):
                 span_data[span] = old_data + [element_data]
 
                 if self.debug:
-                    cad_model.add(an.Point3D(location_source), '''{"layer": "closest_point"}''')
-                    cad_model.add(an.Line3D(location_source, location_target), '''{"layer": "displacement_field"}''')
-                    cad_model.add(an.Line3D(location, location_source), '''{"layer": "projection"}''')
+                    cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/ClosestPoints"}')
+                    cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementFields"}')
+                    cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projections"}')
 
-                # element = eq.PointSupport(nodes[nonzero_indices], [element_data])
                 element = PointOnSurfaceSupport(nodes[nonzero_indices], shape_functions, min_location + displacement, weight * penalty)
                 elements.append(element)
 
 
-class Shell3P3D(Task):
+class ApplyShell3P3D(Task):
     thickness: float
     youngs_modulus: float
     poissons_ratio: float
@@ -412,13 +416,14 @@ class Shell3P3D(Task):
             for u, v, weight in an.integration_points(face, model_tolerance):
                 nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
 
-                element = Shell(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
+                element = Shell3P3D(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
                 elements.append(element)
 
 
-class EdgeCoupling(Task):
+class ApplyEdgeCoupling(Task):
     penalty_displacement: float = 1.0
     penalty_rotation: float = 1.0
+    debug: bool = False
 
     def run(self, config, job, data):
         model_tolerance = job.model_tolerance
@@ -428,7 +433,7 @@ class EdgeCoupling(Task):
 
         # FIXME: Check for None
 
-        data['nodes'] = data.get('nodes', {})
+        data['nodes'] = nodes = data.get('nodes', {})
         data['elements'] = elements = data.get('elements', [])
 
         for key, edge in cad_model.of_type('BrepEdge'):
@@ -440,29 +445,29 @@ class EdgeCoupling(Task):
             nurbs_surface_key_a, nurbs_surface_a = trim_a.surface_geometry
             nurbs_surface_key_b, nurbs_surface_b = trim_b.surface_geometry
 
-            if nurbs_surface_a not in data['nodes']:
-                nodes = []
+            if nurbs_surface_a not in nodes:
+                nurbs_surface_nodes = []
 
                 for x, y, z in nurbs_surface_a.poles:
-                    nodes.append(eq.Node(x, y, z))
+                    nurbs_surface_nodes.append(eq.Node(x, y, z))
 
-                nurbs_surface_nodes_a = np.array(nodes, object)
+                nurbs_surface_nodes_a = np.array(nurbs_surface_nodes, object)
 
-                data['nodes'][nurbs_surface_a] = nodes
+                nodes[nurbs_surface_a] = nurbs_surface_nodes
             else:
-                nurbs_surface_nodes_a = data['nodes'][nurbs_surface_a]
+                nurbs_surface_nodes_a = nodes[nurbs_surface_a]
 
-            if nurbs_surface_b not in data['nodes']:
-                nodes = []
+            if nurbs_surface_b not in nodes:
+                nurbs_surface_nodes = []
 
                 for x, y, z in nurbs_surface_b.poles:
-                    nodes.append(eq.Node(x, y, z))
+                    nurbs_surface_nodes.append(eq.Node(x, y, z))
 
-                nurbs_surface_nodes_b = np.array(nodes, object)
+                nurbs_surface_nodes_b = np.array(nurbs_surface_nodes, object)
 
-                data['nodes'][nurbs_surface_b] = nodes
+                nodes[nurbs_surface_b] = nurbs_surface_nodes
             else:
-                nurbs_surface_nodes_b = data['nodes'][nurbs_surface_b]
+                nurbs_surface_nodes_b = nodes[nurbs_surface_b]
 
             integration_points_a, integration_points_b = an.integration_points(edge, tolerance=model_tolerance)
 
@@ -477,25 +482,70 @@ class EdgeCoupling(Task):
                 element_nodes_b = [nurbs_surface_nodes_b[i] for i in indices_b]
 
                 if penalty_displacement != 0:
-                    # element = DisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
-                    # elements.append(element)
-
-                    element = OutOfPlaneDisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
+                    element = DisplacementCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
                     elements.append(element)
-
-                # cad_model.add(an.Point3D(element.act_a), r'''{"layer": "points_a"}''')
-                # cad_model.add(an.Point3D(element.act_b), r'''{"layer": "points_b"}''')
 
                 if penalty_rotation != 0:
                     _, t2_edge = trim_a.curve_3d.derivatives_at(t_a, order=1)
                     t2_edge /= np.linalg.norm(t2_edge)
 
-                    # element = EdgeRotationCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight * penalty_rotation)
-                    # elements.append(element)
+                    element = EdgeRotationCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight * penalty_rotation)
+                    elements.append(element)
 
-                    # element = NormalCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_rotation)
-                    # elements.append(element)
+                    if self.debug:
+                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
 
-                point = nurbs_surface_a.point_at(u_a, v_a)
-                # cad_model.add(an.Line3D(point, point+t2_edge), r'''{"layer": "rotation_axis"}''')
-                cad_model.add(an.Point3D(point), r'''{"layer": "IgaDisplacementCoupling"}''')
+                if self.debug:
+                    point_a = nurbs_surface_a.point_at(u_a, v_a)
+                    point_b = nurbs_surface_b.point_at(u_b, v_b)
+                    cad_model.add(an.Point3D(point_a), r'{"layer": "Debug/ApplyEdgeCoupling/PointsA"}')
+                    cad_model.add(an.Point3D(point_b), r'{"layer": "Debug/ApplyEdgeCoupling/PointsB"}')
+
+                    if penalty_rotation != 0:
+                        cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
+
+
+class ApplyAlphaRegularization(Task):
+    penalty: float = 1.0
+    debug: bool = False
+
+    def run(self, config, job, data):
+        cad_model = data.get('cad_model', None)
+
+        # FIXME: Check for None
+
+        data['nodes'] = data.get('nodes', {})
+
+        data['elements'] = elements = data.get('elements', [])
+
+        nb_conditions = 0
+
+        for key, face in cad_model.of_type('BrepFace'):
+            surface_geometry_key = surface_geometry = face.surface_geometry.data
+
+            if surface_geometry_key not in data['nodes']:
+                nodes = []
+
+                for x, y, z in surface_geometry.poles:
+                    nodes.append(eq.Node(x, y, z))
+                nodes = np.array(nodes, object)
+                data['nodes'][surface_geometry_key] = nodes
+            else:
+                nodes = data['nodes'][surface_geometry_key]
+
+            for r in range(surface_geometry.nb_poles_u):
+                for s in range(surface_geometry.nb_poles_v):
+                    target_node = nodes[r * surface_geometry.nb_poles_v + s]
+                    u, v = surface_geometry.greville_point(r, s)
+
+                    nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
+
+                    element = PointOnSurfaceNodeCoupling(nodes[nonzero_indices], shape_functions, target_node, self.penalty)
+                    elements.append(element)
+
+                    nb_conditions += 1
+
+                    if self.debug:
+                        cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
+
+        print(f'{nb_conditions} new conditions')
