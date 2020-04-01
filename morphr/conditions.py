@@ -118,11 +118,11 @@ class DisplacementCoupling(eq.Objective):
 class EdgeRotationCoupling(eq.Objective):
     def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight):
         eq.Objective.__init__(self)
-        self.nodes_a = nodes_a
-        self.nodes_b = nodes_b
-        self.shape_functions_a = shape_functions_a
-        self.shape_functions_b = shape_functions_b
-        self.weight = weight
+        self.nodes_a = np.asarray(nodes_a, object)
+        self.nodes_b = np.asarray(nodes_b, object)
+        self.shape_functions_a = np.asarray(shape_functions_a, float)
+        self.shape_functions_b = np.asarray(shape_functions_b, float)
+        self.weight = float(weight)
         variables = []
         for node in nodes_a + nodes_b:
             variables += [node.x, node.y, node.z]
