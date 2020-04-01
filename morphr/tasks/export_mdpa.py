@@ -1,7 +1,4 @@
-from morphr import PointSupport, Task
-import numpy as np
-import eqlib as eq
-import anurbs as an
+from morphr import Task
 
 
 class ExportMdpa(Task):

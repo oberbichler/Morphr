@@ -1,7 +1,5 @@
-from morphr import PointSupport, Task
-import numpy as np
+from morphr import Task
 import eqlib as eq
-import anurbs as an
 
 
 class SolveNonlinear(Task):
