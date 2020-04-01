@@ -7,7 +7,6 @@ import anurbs as an
 class ApplyEdgeCoupling(Task):
     penalty_displacement: float = 1.0
     penalty_rotation: float = 1.0
-    debug: bool = False
 
     def run(self, config, job, data):
         model_tolerance = job.model_tolerance

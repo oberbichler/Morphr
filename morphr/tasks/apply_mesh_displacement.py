@@ -6,7 +6,6 @@ import anurbs as an
 
 class ApplyMeshDisplacement(Task):
     penalty: float = 1
-    debug: bool = False
 
     def line_projection(self, point, a, b):
         dif = b - a
