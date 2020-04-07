@@ -6,6 +6,8 @@ from morphr.constraints.point_support import PointSupport
 from morphr.constraints.rotation_coupling import RotationCoupling
 from morphr.constraints.shell_3p import Shell3P
 
+from morphr.logging import Logger
+
 from morphr.tasks.apply_alpha_regularization import ApplyAlphaRegularization
 from morphr.tasks.apply_edge_coupling import ApplyEdgeCoupling
 from morphr.tasks.apply_mesh_displacement import ApplyMeshDisplacement
@@ -21,6 +23,7 @@ __all__ = [
     'Configuration',
     'DebugData',
     'Job',
+    'Logger',
     'Task',
     # constraints
     'PointCoupling',
