@@ -4,6 +4,7 @@ from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
 from pydantic import BaseModel
+import time
 
 
 init()
@@ -76,22 +77,31 @@ class Job(Entry):
     model_tolerance: float
     info_level: int = 0
     tasks: List[str]
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
     def run(self, config):
         print(Fore.GREEN + Style.BRIGHT + f'Begin {self.key}...' + Style.RESET_ALL)
-        data = dict(cad_model=None)
+        self.start_time = time.perf_counter()
         for task_key in self.tasks:
             if task_key.startswith('#'):
                 continue
             task = config[task_key]
             task.begin()
             task.run(config, self, data)
+            task.end()
+
+        self.end_time = time.perf_counter()
         print(Fore.GREEN + Style.BRIGHT + f'Finished {self.key}' + Style.RESET_ALL)
+        time_ellapsed = self.end_time - self.start_time
+        print(f'Done in {time_ellapsed:.2f} sec')
 
 
 class Task(Entry):
     debug: bool = False
     info_level: Optional[int]
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
     def log(self, job, message):
         info_level = self.info_level or job.info_level
@@ -107,3 +117,10 @@ class Task(Entry):
 
     def begin(self):
         print(Fore.YELLOW + f'{self.key}...' + Style.RESET_ALL)
+        self.start_time = time.perf_counter()
+
+    def end(self):
+        self.end_time = time.perf_counter()
+        time_ellapsed = self.end_time - self.start_time
+        print(f'Done in {time_ellapsed:.2f} sec')
+
