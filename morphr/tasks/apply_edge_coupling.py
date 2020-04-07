@@ -8,7 +8,7 @@ class ApplyEdgeCoupling(Task):
     penalty_displacement: float = 1.0
     penalty_rotation: float = 1.0
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         model_tolerance = job.model_tolerance
         cad_model = data.get('cad_model', None)
         penalty_displacement = self.penalty_displacement
@@ -97,4 +97,4 @@ class ApplyEdgeCoupling(Task):
 
         # output
 
-        print(f'{nb_conditions} new conditions')
+        log.info(f'{nb_conditions} new conditions')

@@ -29,7 +29,7 @@ class ApplyMeshDisplacement(Task):
 
         return closest_point, t
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
         vertices = data.get('vertices', None)
         displacements = data.get('displacements', None)
@@ -155,4 +155,4 @@ class ApplyMeshDisplacement(Task):
 
         # output
 
-        print(f'{nb_conditions} new conditions')
+        log.info(f'{nb_conditions} new conditions')

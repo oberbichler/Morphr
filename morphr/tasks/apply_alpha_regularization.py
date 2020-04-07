@@ -7,7 +7,7 @@ import anurbs as an
 class ApplyAlphaRegularization(Task):
     penalty: float = 1.0
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
 
         # FIXME: Check for None
@@ -48,4 +48,4 @@ class ApplyAlphaRegularization(Task):
 
         # output
 
-        print(f'{nb_conditions} new conditions')
+        log.info(f'{nb_conditions} new conditions')

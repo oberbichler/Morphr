@@ -6,13 +6,13 @@ class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         elements = data.get('elements', None)
 
         problem = eq.Problem(elements, nb_threads=1)
 
-        print(f'{len(elements)} conditions')
-        print(f'{problem.nb_variables} variables')
+        log.info(f'{len(elements)} conditions')
+        log.info(f'{problem.nb_variables} variables')
 
         eq.Log.info_level = 5
 

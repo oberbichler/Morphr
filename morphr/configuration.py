@@ -1,5 +1,6 @@
 import json
 import sys
+from morphr.logging import Logger
 from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
@@ -81,29 +82,35 @@ class Job(Entry):
     end_time: Optional[float] = None
 
     def run(self, config):
-        print(Fore.GREEN + Style.BRIGHT + f'Begin {self.key}...' + Style.RESET_ALL)
+        log = Logger(info_level=self.info_level)
+
+        log.h1(f'Begin {self.key}...')
         self.start_time = time.perf_counter()
 
         data = dict(
             cad_model=None,
         )
+
         DebugData.clear()
+
         for task_key in self.tasks:
             if task_key.startswith('#'):
                 continue
             task = config[task_key]
-            task.begin()
-            task.run(config, self, data)
-            task.end()
+            log.push(task.info_level)
+            task.begin(log)
+            task.run(config, self, data, log)
+            task.end(log)
+            log.pop()
 
         if not DebugData.is_empty():
             with open('debug_data.json', 'w') as f:
                 DebugData.save(f)
 
         self.end_time = time.perf_counter()
-        print(Fore.GREEN + Style.BRIGHT + f'Finished {self.key}' + Style.RESET_ALL)
+        log.h1(f'Finished {self.key}')
         time_ellapsed = self.end_time - self.start_time
-        print(f'Done in {time_ellapsed:.2f} sec')
+        log.info(f'Done in {time_ellapsed:.2f} sec')
 
 
 class Task(Entry):
@@ -112,11 +119,6 @@ class Task(Entry):
     start_time: Optional[float] = None
     end_time: Optional[float] = None
 
-    def log(self, job, message):
-        info_level = self.info_level or job.info_level
-        if info_level > 0:
-            print(message)
-
     @staticmethod
     def select_entries(cad_model, type_name, selector):
         entries = cad_model.of_type(type_name)
@@ -124,14 +126,14 @@ class Task(Entry):
             return entries
         return filter(lambda entry: entry.key in selector, entries)
 
-    def begin(self):
-        print(Fore.YELLOW + f'{self.key}...' + Style.RESET_ALL)
+    def begin(self, log):
+        log.h2(Fore.YELLOW + f'{self.key}...' + Style.RESET_ALL)
         self.start_time = time.perf_counter()
 
-    def end(self):
+    def end(self, log):
         self.end_time = time.perf_counter()
         time_ellapsed = self.end_time - self.start_time
-        print(f'Done in {time_ellapsed:.2f} sec')
+        log.info(f'Done in {time_ellapsed:.2f} sec')
 
 
 class DebugData:

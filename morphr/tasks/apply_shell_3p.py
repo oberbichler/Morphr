@@ -9,7 +9,7 @@ class ApplyShell3P(Task):
     youngs_modulus: float
     poissons_ratio: float
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
         model_tolerance = job.model_tolerance
 
@@ -48,4 +48,4 @@ class ApplyShell3P(Task):
 
         # output
 
-        print(f'{nb_conditions} new conditions')
+        log.info(f'{nb_conditions} new conditions')
