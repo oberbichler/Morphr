@@ -16,6 +16,8 @@ class ApplyEdgeCoupling(Task):
 
         # FIXME: Check for None
 
+        nb_conditions = 0
+
         data['nodes'] = nodes = data.get('nodes', {})
         data['elements'] = elements = data.get('elements', [])
 
@@ -68,12 +70,16 @@ class ApplyEdgeCoupling(Task):
                     element = PointCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
                     elements.append(element)
 
+                    nb_conditions += 1
+
                 if penalty_rotation != 0:
                     _, t2_edge = trim_a.curve_3d.derivatives_at(t_a, order=1)
                     t2_edge /= np.linalg.norm(t2_edge)
 
                     element = RotationCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, t2_edge, weight * penalty_rotation)
                     elements.append(element)
+
+                    nb_conditions += 1
 
                     # assert_almost_equal(act_lhs, exp_lhs)
 
@@ -88,3 +94,7 @@ class ApplyEdgeCoupling(Task):
 
                     if penalty_rotation != 0:
                         cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
+
+        # output
+
+        print(f'{nb_conditions} new conditions')

@@ -13,6 +13,8 @@ class ApplyShell3P(Task):
         cad_model = data.get('cad_model', None)
         model_tolerance = job.model_tolerance
 
+        nb_conditions = 0
+
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
@@ -41,3 +43,9 @@ class ApplyShell3P(Task):
 
                 element = Shell3P(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
                 elements.append(element)
+
+                nb_conditions += 1
+
+        # output
+
+        print(f'{nb_conditions} new conditions')

@@ -37,6 +37,8 @@ class ApplyMeshDisplacement(Task):
         penalty = self.penalty
         model_tolerance = job.model_tolerance
 
+        nb_conditions = 0
+
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
@@ -148,3 +150,9 @@ class ApplyMeshDisplacement(Task):
 
                 element = PointSupport(nodes[nonzero_indices], shape_functions, min_location + displacement, weight * penalty)
                 elements.append(element)
+
+                nb_conditions += 1
+
+        # output
+
+        print(f'{nb_conditions} new conditions')

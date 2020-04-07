@@ -10,3 +10,9 @@ class ImportIbra(Task):
         model.load(self.path)
 
         data['cad_model'] = model
+
+        # output
+
+        nb_faces = len(model.of_type('BrepFace'))
+
+        print(f'{nb_faces} faces')

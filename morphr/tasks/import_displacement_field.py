@@ -34,3 +34,8 @@ class ImportDisplacementField(Task):
         data['vertices'] = vertices
         data['displacements'] = displacements
         data['faces'] = faces
+
+        # output
+
+        print(f'{len(vertices)} vertices')
+        print(f'{len(faces)} triangles')

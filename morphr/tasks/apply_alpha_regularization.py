@@ -46,4 +46,6 @@ class ApplyAlphaRegularization(Task):
                     if self.debug:
                         cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
 
+        # output
+
         print(f'{nb_conditions} new conditions')
