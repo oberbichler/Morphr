@@ -7,7 +7,7 @@ import anurbs as an
 class ApplyAlphaRegularization(Task):
     penalty: float = 1.0
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
 
         # FIXME: Check for None
@@ -46,4 +46,6 @@ class ApplyAlphaRegularization(Task):
                     if self.debug:
                         cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
 
-        print(f'{nb_conditions} new conditions')
+        # output
+
+        log.info(f'{nb_conditions} new conditions')

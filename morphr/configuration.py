@@ -1,9 +1,11 @@
 import json
 import sys
+from morphr.logging import Logger
 from collections import OrderedDict
 from colorama import init, Fore, Style
 from typing import List, Optional
 from pydantic import BaseModel
+import time
 
 
 init()
@@ -76,27 +78,46 @@ class Job(Entry):
     model_tolerance: float
     info_level: int = 0
     tasks: List[str]
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
     def run(self, config):
-        print(Fore.GREEN + Style.BRIGHT + f'Begin {self.key}...' + Style.RESET_ALL)
-        data = dict(cad_model=None)
+        log = Logger(info_level=self.info_level)
+
+        log.h1(f'Begin {self.key}...')
+        self.start_time = time.perf_counter()
+
+        data = dict(
+            cad_model=None,
+        )
+
+        DebugData.clear()
+
         for task_key in self.tasks:
             if task_key.startswith('#'):
                 continue
             task = config[task_key]
-            task.begin()
-            task.run(config, self, data)
-        print(Fore.GREEN + Style.BRIGHT + f'Finished {self.key}' + Style.RESET_ALL)
+            log.push(task.info_level)
+            task.begin(log)
+            task.run(config, self, data, log)
+            task.end(log)
+            log.pop()
+
+        if not DebugData.is_empty():
+            with open('debug_data.json', 'w') as f:
+                DebugData.save(f)
+
+        self.end_time = time.perf_counter()
+        log.h1(f'Finished {self.key}')
+        time_ellapsed = self.end_time - self.start_time
+        log.info(f'Done in {time_ellapsed:.2f} sec')
 
 
 class Task(Entry):
     debug: bool = False
     info_level: Optional[int]
-
-    def log(self, job, message):
-        info_level = self.info_level or job.info_level
-        if info_level > 0:
-            print(message)
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
     @staticmethod
     def select_entries(cad_model, type_name, selector):
@@ -105,5 +126,35 @@ class Task(Entry):
             return entries
         return filter(lambda entry: entry.key in selector, entries)
 
-    def begin(self):
-        print(Fore.YELLOW + f'{self.key}...' + Style.RESET_ALL)
+    def begin(self, log):
+        log.h2(Fore.YELLOW + f'{self.key}...' + Style.RESET_ALL)
+        self.start_time = time.perf_counter()
+
+    def end(self, log):
+        self.end_time = time.perf_counter()
+        time_ellapsed = self.end_time - self.start_time
+        log.info(f'Done in {time_ellapsed:.2f} sec')
+
+
+class DebugData:
+    _data = list()
+
+    @staticmethod
+    def clear():
+        DebugData._data.clear()
+
+    @staticmethod
+    def is_empty():
+        DebugData._data.clear()
+
+    @staticmethod
+    def add(**kwargs):
+        DebugData._data.append(kwargs)
+
+    @staticmethod
+    def tojson():
+        return json.dumps(DebugData._data, indent=2)
+
+    @staticmethod
+    def save(file):
+        return json.dump(DebugData._data, file)

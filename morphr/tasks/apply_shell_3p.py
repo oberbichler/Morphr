@@ -9,9 +9,11 @@ class ApplyShell3P(Task):
     youngs_modulus: float
     poissons_ratio: float
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
         model_tolerance = job.model_tolerance
+
+        nb_conditions = 0
 
         # FIXME: Check for None
 
@@ -41,3 +43,9 @@ class ApplyShell3P(Task):
 
                 element = Shell3P(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
                 elements.append(element)
+
+                nb_conditions += 1
+
+        # output
+
+        log.info(f'{nb_conditions} new conditions')

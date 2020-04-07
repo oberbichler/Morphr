@@ -29,13 +29,15 @@ class ApplyMeshDisplacement(Task):
 
         return closest_point, t
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
         vertices = data.get('vertices', None)
         displacements = data.get('displacements', None)
         faces = data.get('faces', None)
         penalty = self.penalty
         model_tolerance = job.model_tolerance
+
+        nb_conditions = 0
 
         # FIXME: Check for None
 
@@ -148,3 +150,9 @@ class ApplyMeshDisplacement(Task):
 
                 element = PointSupport(nodes[nonzero_indices], shape_functions, min_location + displacement, weight * penalty)
                 elements.append(element)
+
+                nb_conditions += 1
+
+        # output
+
+        log.info(f'{nb_conditions} new conditions')

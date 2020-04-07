@@ -7,7 +7,7 @@ class ImportDisplacementField(Task):
     mesh_0: str
     mesh_1: str
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         mesh_0 = meshio.read(self.mesh_0, file_format='obj')
         mesh_1 = meshio.read(self.mesh_1, file_format='obj')
 
@@ -34,3 +34,8 @@ class ImportDisplacementField(Task):
         data['vertices'] = vertices
         data['displacements'] = displacements
         data['faces'] = faces
+
+        # output
+
+        log.info(f'{len(vertices)} vertices')
+        log.info(f'{len(faces)} triangles')

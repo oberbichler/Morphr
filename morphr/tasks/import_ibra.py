@@ -5,8 +5,14 @@ import anurbs as an
 class ImportIbra(Task):
     path: str
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         model = an.Model()
         model.load(self.path)
 
         data['cad_model'] = model
+
+        # output
+
+        nb_faces = len(model.of_type('BrepFace'))
+
+        log.info(f'{nb_faces} faces')

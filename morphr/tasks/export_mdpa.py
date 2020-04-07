@@ -4,7 +4,7 @@ from morphr import Task
 class ExportMdpa(Task):
     path: str
 
-    def run(self, config, job, data):
+    def run(self, config, job, data, log):
         vertices = data.get('vertices', None)
         displacements = data.get('displacements', None)
         faces = data.get('faces', None)
