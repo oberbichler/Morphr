@@ -83,6 +83,11 @@ class Job(Entry):
     def run(self, config):
         print(Fore.GREEN + Style.BRIGHT + f'Begin {self.key}...' + Style.RESET_ALL)
         self.start_time = time.perf_counter()
+
+        data = dict(
+            cad_model=None,
+        )
+        DebugData.clear()
         for task_key in self.tasks:
             if task_key.startswith('#'):
                 continue
@@ -90,6 +95,10 @@ class Job(Entry):
             task.begin()
             task.run(config, self, data)
             task.end()
+
+        if not DebugData.is_empty():
+            with open('debug_data.json', 'w') as f:
+                DebugData.save(f)
 
         self.end_time = time.perf_counter()
         print(Fore.GREEN + Style.BRIGHT + f'Finished {self.key}' + Style.RESET_ALL)
@@ -124,3 +133,26 @@ class Task(Entry):
         time_ellapsed = self.end_time - self.start_time
         print(f'Done in {time_ellapsed:.2f} sec')
 
+
+class DebugData:
+    _data = list()
+
+    @staticmethod
+    def clear():
+        DebugData._data.clear()
+
+    @staticmethod
+    def is_empty():
+        DebugData._data.clear()
+
+    @staticmethod
+    def add(**kwargs):
+        DebugData._data.append(kwargs)
+
+    @staticmethod
+    def tojson():
+        return json.dumps(DebugData._data, indent=2)
+
+    @staticmethod
+    def save(file):
+        return json.dump(DebugData._data, file)

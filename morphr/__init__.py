@@ -1,4 +1,4 @@
-from morphr.configuration import Configuration, Job, Task
+from morphr.configuration import Configuration, DebugData, Job, Task
 
 from morphr.constraints.point_coupling import PointCoupling
 from morphr.constraints.point_node_coupling import PointNodeCoupling
@@ -19,6 +19,7 @@ from morphr.tasks.solve_nonlinear import SolveNonlinear
 
 __all__ = [
     'Configuration',
+    'DebugData',
     'Job',
     'Task',
     # constraints
