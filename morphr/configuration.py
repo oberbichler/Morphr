@@ -145,7 +145,7 @@ class DebugData:
 
     @staticmethod
     def is_empty():
-        DebugData._data.clear()
+        len(DebugData._data) == 0
 
     @staticmethod
     def add(**kwargs):
