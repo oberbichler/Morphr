@@ -8,7 +8,7 @@ class PointNodeCoupling(eq.Objective):
     def __init__(self, nodes, shape_functions, target_node, weight):
         eq.Objective.__init__(self)
 
-        self.nodes = nodes
+        self.nodes = np.asarray(nodes, object)
         self.target_node = target_node
         self.shape_functions = np.asarray(shape_functions, float)
         self.weight = weight
