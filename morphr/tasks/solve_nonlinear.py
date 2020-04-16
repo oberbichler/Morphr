@@ -60,7 +60,7 @@ class SolveNonlinear(Task):
 
             problem.compute()
 
-            system_norm_inf = la.norm(problem.general_hm, np.inf)
+            system_norm_inf = la.norm(problem.hm, np.inf)
 
             f += problem.f
             g += problem.df
@@ -74,7 +74,7 @@ class SolveNonlinear(Task):
 
                 problem.compute()
 
-                condition_norm_inf = la.norm(problem.general_hm, np.inf)
+                condition_norm_inf = la.norm(problem.hm, np.inf)
 
                 factor = system_norm_inf / condition_norm_inf
 
@@ -89,7 +89,7 @@ class SolveNonlinear(Task):
             problem.hm_values[:] = h
 
             if self.damping != 0:
-                problem.hm_add_diagonal(self.damping)
+                problem.hm_add_diagonal(system_norm_inf * self.damping)
 
             dx = problem.hm_inv_v(g)
 
