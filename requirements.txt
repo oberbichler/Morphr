@@ -5,3 +5,4 @@ hyperjet
 meshio
 numpy
 pydantic
+pytest
