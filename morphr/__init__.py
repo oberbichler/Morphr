@@ -19,6 +19,8 @@ from morphr.tasks.import_ibra import ImportIbra
 from morphr.tasks.solve_nonlinear import SolveNonlinear
 
 
+__version__ = 'dev'
+
 __all__ = [
     'Configuration',
     'DebugData',
