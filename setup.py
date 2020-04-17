@@ -1,5 +1,8 @@
 from setuptools import setup
 
+import os
+import re
+
 
 def get_version(path):
     with open(os.path.join(os.path.dirname(__file__), path)) as file:
