@@ -28,6 +28,7 @@ setup(
     install_requires=[
         'anurbs',
         'colorama',
+        'click',
         'eqlib',
         'hyperjet',
         'meshio',
