@@ -39,7 +39,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'morphr=morphr.cli:main'
+            'morphr=morphr.cli'
         ]
     }
 )
