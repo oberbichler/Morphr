@@ -1,8 +1,19 @@
 from setuptools import setup
 
+
+def get_version(path):
+    with open(os.path.join(os.path.dirname(__file__), path)) as file:
+        data = file.read()
+    regex = r"^__version__ = ['\"]([^'\"]*)['\"]"
+    version_match = re.search(regex, data, re.M)
+    if version_match is None:
+        raise RuntimeError("Unable to find version string.")
+    return version_match.group(1)
+
+
 setup(
     name='morphr',
-    version='0.1.0',
+    version=get_version(os.path.join('morphr', '__init__.py')),
     packages=[
         'morphr',
         'morphr.constraints',
@@ -11,7 +22,7 @@ setup(
     ],
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@tum.de',
-    requires=[
+    install_requires=[
         'anurbs',
         'colorama',
         'eqlib',
