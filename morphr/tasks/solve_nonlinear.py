@@ -11,6 +11,7 @@ def inf_norm(sparse_matrix):
 class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
+    auto_scale: bool = False
 
     def run(self, config, job, data, log):
         elements = data.get('elements', None)
@@ -20,13 +21,10 @@ class SolveNonlinear(Task):
         log.info(f'{len(elements)} conditions')
         log.info(f'{problem.nb_variables} variables')
 
-        eq.Log.info_level = 5
-
-        solver = eq.NewtonRaphson(problem)
-        solver.maxiter = self.max_iterations
-        solver.damping = self.damping
-
-        solver.run()
+        if self.auto_scale:
+            self.solve_auto_scale(log, problem, elements)
+        else:
+            self.solve(log, problem)
 
         for surface, nodes in data['nodes'].items():
             for i, node in enumerate(nodes):

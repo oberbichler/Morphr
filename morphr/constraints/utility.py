@@ -2,6 +2,14 @@ import numpy as np
 import hyperjet as hj
 
 
+def normSq(v):
+    return np.dot(v, v)
+
+
+def norm(v):
+    return np.dot(v, v)**0.5
+
+
 def normalized(v):
     return v / np.dot(v, v)**0.5
 

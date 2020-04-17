@@ -87,7 +87,7 @@ class Shell3P(eq.Objective):
         a3 /= np.linalg.norm(a3)
 
         act_a = np.array([np.dot(a1, a1), np.dot(a2, a2), np.dot(a1, a2)])
-        act_b = np.dot([a1_1, a2_2, a1_2], a3)
+        act_b = np.dot([a1_1, a1_2, a2_2], a3)
 
         eps = np.dot(self.tm, act_a - self.ref_a) / 2
         kap = np.dot(self.tm, self.ref_b - act_b)
