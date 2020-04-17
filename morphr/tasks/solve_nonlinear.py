@@ -82,7 +82,7 @@ class SolveNonlinear(Task):
 
                 condition_norm_inf = inf_norm(problem.hm)
 
-                factor = system_norm_inf / condition_norm_inf * 100
+                factor = system_norm_inf / condition_norm_inf
 
                 f += problem.f * factor
                 g += problem.df * factor
