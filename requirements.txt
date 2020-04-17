@@ -1,4 +1,5 @@
 anurbs
+click
 colorama
 eqlib
 hyperjet
