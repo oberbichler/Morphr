@@ -30,7 +30,6 @@ setup(
         'colorama',
         'eqlib',
         'hyperjet',
-        'json',
         'meshio',
         'numpy',
         'pydantic',
