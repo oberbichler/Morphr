@@ -1,6 +1,11 @@
 from morphr import Task
 import eqlib as eq
 import numpy as np
+import scipy.sparse.linalg as la
+
+
+def inf_norm(sparse_matrix):
+    return la.norm(sparse_matrix, np.inf)
 
 
 class SolveNonlinear(Task):
@@ -43,7 +48,6 @@ class SolveNonlinear(Task):
 
     def solve_auto_scale(self, log, problem, elements):
         from morphr import PointSupport
-        import scipy.sparse.linalg as la
 
         system_element_types = [PointSupport]
         condition_element_types = set([type(element) for element in elements if type(element) not in system_element_types])
@@ -60,7 +64,7 @@ class SolveNonlinear(Task):
 
             problem.compute()
 
-            system_norm_inf = la.norm(problem.general_hm, np.inf)
+            system_norm_inf = inf_norm(problem.hm)
 
             f += problem.f
             g += problem.df
@@ -74,9 +78,9 @@ class SolveNonlinear(Task):
 
                 problem.compute()
 
-                condition_norm_inf = la.norm(problem.general_hm, np.inf)
+                condition_norm_inf = inf_norm(problem.hm)
 
-                factor = system_norm_inf / condition_norm_inf
+                factor = system_norm_inf / condition_norm_inf * 100
 
                 f += problem.f * factor
                 g += problem.df * factor
@@ -89,7 +93,7 @@ class SolveNonlinear(Task):
             problem.hm_values[:] = h
 
             if self.damping != 0:
-                problem.hm_add_diagonal(self.damping)
+                problem.hm_add_diagonal(system_norm_inf * self.damping)
 
             dx = problem.hm_inv_v(g)
 

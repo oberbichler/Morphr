@@ -1,0 +1,8 @@
+anurbs
+colorama
+eqlib
+hyperjet
+meshio
+numpy
+pydantic
+pytest
