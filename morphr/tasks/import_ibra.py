@@ -14,5 +14,7 @@ class ImportIbra(Task):
         # output
 
         nb_faces = len(model.of_type('BrepFace'))
+        nb_edges = len(model.of_type('BrepEdge'))
 
         log.info(f'{nb_faces} faces')
+        log.info(f'{nb_edges} edges')
