@@ -2,6 +2,7 @@ from morphr import Task
 import eqlib as eq
 import numpy as np
 import scipy.sparse.linalg as la
+import time
 
 
 def inf_norm(sparse_matrix):
@@ -47,10 +48,7 @@ class SolveNonlinear(Task):
             log.info(f'xnorm = {np.linalg.norm(dx)}')
 
     def solve_auto_scale(self, log, problem, elements):
-        from morphr import PointSupport
-
-        system_element_types = [PointSupport]
-        condition_element_types = set([type(element) for element in elements if type(element) not in system_element_types])
+        element_types = set([type(element) for element in elements])
 
         f = np.zeros_like(problem.f)
         g = np.zeros_like(problem.df)
@@ -59,41 +57,41 @@ class SolveNonlinear(Task):
         for i in range(self.max_iterations):
             log.info(f'Iteration {i+1}/{self.max_iterations}...')
 
-            for element in elements:
-                element.is_active = type(element) in system_element_types
+            for element_type in element_types:
+                nb_elements = 0
 
-            problem.compute()
-
-            system_norm_inf = inf_norm(problem.hm)
-
-            f += problem.f
-            g += problem.df
-            h += problem.hm_values
-
-            log.info(f'Norm System = {system_norm_inf}')
-
-            for element_type in condition_element_types:
                 for element in elements:
                     element.is_active = isinstance(element, element_type)
+                    if element.is_active:
+                        nb_elements += 1
+
+                start_time = time.perf_counter()
 
                 problem.compute()
 
+                end_time = time.perf_counter()
+                time_ellapsed = end_time - start_time
+                time_ellapsed_per_element = time_ellapsed / nb_elements
+                log.info(f'Computation of {element_type.__name__} in {time_ellapsed:.2f} sec')
+                log.info(f'{time_ellapsed_per_element:.5f} sec/element')
+
                 condition_norm_inf = inf_norm(problem.hm)
 
-                factor = system_norm_inf / condition_norm_inf
+                factor = 1 / condition_norm_inf
 
                 f += problem.f * factor
                 g += problem.df * factor
                 h += problem.hm_values * factor
 
                 log.info(f'Norm {element_type.__name__} = {condition_norm_inf}')
+                log.info(f'Norm {element_type.__name__} = {inf_norm(problem.hm * factor)}')
 
             problem.f = f
             problem.df[:] = g
             problem.hm_values[:] = h
 
             if self.damping != 0:
-                problem.hm_add_diagonal(system_norm_inf * self.damping)
+                problem.hm_add_diagonal(self.damping)
 
             dx = problem.hm_inv_v(g)
 
