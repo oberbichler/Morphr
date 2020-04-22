@@ -1,4 +1,4 @@
-from morphr.constraints.point_support import PointSupport
+from morphr.constraints.point_location import PointLocation
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -35,7 +35,7 @@ def element():
 
     weight = DATA['weight']
 
-    return PointSupport(nodes, shape_functions, target, weight)
+    return PointLocation(nodes, shape_functions, target, weight)
 
 
 def test_element(element):

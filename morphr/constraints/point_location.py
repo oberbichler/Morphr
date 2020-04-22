@@ -3,7 +3,7 @@ import numpy as np
 from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_2
 
 
-class PointSupport(eq.Objective):
+class PointLocation(eq.Objective):
     def __init__(self, nodes, shape_functions, target, weight):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)
