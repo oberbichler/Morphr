@@ -1,4 +1,4 @@
-from morphr.constraints.point_coupling import PointCoupling
+from morphr.constraints.point_distance import PointDistance
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -43,7 +43,7 @@ def element():
 
     weight = DATA['weight']
 
-    return PointCoupling(nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight)
+    return PointDistance(nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight)
 
 
 def test_element(element):

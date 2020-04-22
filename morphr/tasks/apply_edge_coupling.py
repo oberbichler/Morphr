@@ -1,4 +1,4 @@
-from morphr import PointCoupling, RotationCoupling, Task
+from morphr import PointDistance, RotationCoupling, Task
 import numpy as np
 import eqlib as eq
 import anurbs as an
@@ -67,7 +67,7 @@ class ApplyEdgeCoupling(Task):
                 element_nodes_b = [nurbs_surface_nodes_b[i] for i in indices_b]
 
                 if penalty_displacement != 0:
-                    element = PointCoupling(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
+                    element = PointDistance(element_nodes_a, element_nodes_b, shape_functions_a, shape_functions_b, weight * penalty_displacement)
                     elements.append(element)
 
                     nb_conditions += 1

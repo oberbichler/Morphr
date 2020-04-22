@@ -3,7 +3,7 @@ import numpy as np
 from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_2
 
 
-class PointCoupling(eq.Objective):
+class PointDistance(eq.Objective):
     def __init__(self, nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight):
         eq.Objective.__init__(self)
         self.nodes_a = np.asarray(nodes_a, object)
