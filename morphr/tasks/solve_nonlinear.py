@@ -13,11 +13,12 @@ class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
     auto_scale: bool = False
+    nb_threads: int = 1
 
     def run(self, config, job, data, log):
         elements = data.get('elements', None)
 
-        problem = eq.Problem(elements, nb_threads=1)
+        problem = eq.Problem(elements, nb_threads=self.nb_threads)
 
         log.info(f'{len(elements)} conditions')
         log.info(f'{problem.nb_variables} variables')
