@@ -17,7 +17,7 @@ class ApplyAlphaRegularization(mo.Task):
 
         data['nodes'] = data.get('nodes', {})
 
-        data['elements'] = elements = data.get('elements', [])
+        elements = []
 
         nb_conditions = 0
 
@@ -48,6 +48,9 @@ class ApplyAlphaRegularization(mo.Task):
 
                     if self.debug:
                         cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
+
+        data['elements'] = data.get('elements', [])
+        data['elements'].append(('AlphaRegularization', elements, self.penalty))
 
         # output
 

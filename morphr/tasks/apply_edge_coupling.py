@@ -5,7 +5,7 @@ import eqlib as eq
 import numpy as np
 
 POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.NormalDistance
+NORMAL_DISTANCE = mo.RotationCoupling  # mo.NormalDistance
 
 
 class ApplyEdgeCoupling(mo.Task):
@@ -23,7 +23,8 @@ class ApplyEdgeCoupling(mo.Task):
         nb_conditions = 0
 
         data['nodes'] = nodes = data.get('nodes', {})
-        data['elements'] = elements = data.get('elements', [])
+        point_distance_group = []
+        normal_distance_group = []
 
         for key, edge in cad_model.of_type('BrepEdge'):
             if edge.nb_trims != 2:
@@ -73,17 +74,17 @@ class ApplyEdgeCoupling(mo.Task):
                 if penalty_displacement != 0:
                     element = POINT_DISTANCE(element_nodes_a, element_nodes_b)
                     element.add(shape_functions_a, shape_functions_b, weight * penalty_displacement)
-                    elements.append(element)
+                    point_distance_group.append(element)
 
                     nb_conditions += 1
 
                 if penalty_rotation != 0:
-                    _, t2_edge = trim_a.curve_3d.derivatives_at(t_a, order=1)
-                    t2_edge /= np.linalg.norm(t2_edge)
+                    _, axis = trim_a.curve_3d.derivatives_at(t_a, order=1)
+                    axis /= np.linalg.norm(axis)
 
                     element = NORMAL_DISTANCE(element_nodes_a, element_nodes_b)
-                    element.add(shape_functions_a, shape_functions_b, weight=weight * penalty_rotation)
-                    elements.append(element)
+                    element.add(shape_functions_a, shape_functions_b, axis, weight=weight * penalty_rotation)
+                    normal_distance_group.append(element)
 
                     nb_conditions += 1
 
@@ -97,7 +98,15 @@ class ApplyEdgeCoupling(mo.Task):
                     cad_model.add(an.Point3D(point_b), r'{"layer": "Debug/ApplyEdgeCoupling/PointsB"}')
 
                     if penalty_rotation != 0:
-                        cad_model.add(an.Line3D(point_a, point_a + t2_edge), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
+                        cad_model.add(an.Line3D(point_a, point_a + axis), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
+
+        data['elements'] = data.get('elements', [])
+
+        if self.penalty_displacement != 0:
+            data['elements'].append(('DisplacementCoupling', point_distance_group, self.penalty_displacement))
+
+        if self.penalty_rotation != 0:
+            data['elements'].append(('RotationCoupling', normal_distance_group, self.penalty_rotation))
 
         # output
 

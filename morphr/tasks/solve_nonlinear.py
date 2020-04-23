@@ -1,12 +1,7 @@
 from morphr import Task
 import eqlib as eq
 import numpy as np
-import scipy.sparse.linalg as la
 import time
-
-
-def inf_norm(sparse_matrix):
-    return la.norm(sparse_matrix, np.inf)
 
 
 class SolveNonlinear(Task):
@@ -16,7 +11,12 @@ class SolveNonlinear(Task):
     nb_threads: int = 1
 
     def run(self, config, job, data, log):
-        elements = data.get('elements', None)
+        element_groups = data.get('elements', None)
+
+        elements = []
+
+        for _, group_elements, _ in element_groups:
+            elements.extend(group_elements)
 
         problem = eq.Problem(elements, nb_threads=self.nb_threads)
 
@@ -24,7 +24,7 @@ class SolveNonlinear(Task):
         log.info(f'{problem.nb_variables} variables')
 
         if self.auto_scale:
-            self.solve_auto_scale(log, problem, elements)
+            self.solve_auto_scale(log, problem, elements, element_groups)
         else:
             self.solve(log, problem)
 
@@ -48,14 +48,12 @@ class SolveNonlinear(Task):
             log.info(f'rnorm = {np.linalg.norm(problem.df)}')
             log.info(f'xnorm = {np.linalg.norm(dx)}')
 
-    def solve_auto_scale(self, log, problem, elements):
-        element_types = set([type(element) for element in elements])
-
+    def solve_auto_scale(self, log, problem, elements, element_groups):
         f = np.empty_like(problem.f, float)
         g = np.empty_like(problem.df, float)
         h = np.empty_like(problem.hm_values, float)
 
-        scaling_factors = np.empty(len(element_types), float)
+        scaling_factors = np.empty(len(element_groups), float)
 
         for i in range(self.max_iterations):
             log.info(f'Iteration {i+1}/{self.max_iterations}...')
@@ -64,13 +62,14 @@ class SolveNonlinear(Task):
             g.fill(0)
             h.fill(0)
 
-            for j, element_type in enumerate(element_types):
-                nb_elements = 0
+            for j, (group_name, group_elements, group_weight) in enumerate(element_groups):
+                log.info(f'Compute "{group_name}" ({len(group_elements)} @ {group_weight})...')
 
                 for element in elements:
-                    element.is_active = isinstance(element, element_type)
-                    if element.is_active:
-                        nb_elements += 1
+                    element.is_active = False
+
+                for element in group_elements:
+                    element.is_active = True
 
                 start_time = time.perf_counter()
 
@@ -78,30 +77,27 @@ class SolveNonlinear(Task):
 
                 end_time = time.perf_counter()
                 time_ellapsed = end_time - start_time
-                time_ellapsed_per_element = time_ellapsed / nb_elements
-                log.info(f'Computation of {element_type.__name__} in {time_ellapsed:.2f} sec')
+                time_ellapsed_per_element = time_ellapsed / len(group_elements)
+                log.info(f'Computation of {group_name} in {time_ellapsed:.2f} sec')
                 log.info(f'{time_ellapsed_per_element:.5f} sec/element')
 
                 if i == 0:
-                    lhs = problem.general_hm
+                    condition_norm_inf = problem.hm_norm_inf
 
-                    condition_norm_inf = inf_norm(lhs)
-
-                    scaling_factor = 1 / condition_norm_inf
+                    scaling_factor = group_weight / condition_norm_inf
 
                     scaling_factors[j] = scaling_factor
 
-                    log.info(f'Norm {element_type.__name__} = {condition_norm_inf}')
-                    log.info(f'Norm {element_type.__name__} = {inf_norm(lhs * scaling_factor)}')
+                    problem.scale(scaling_factor)
+
+                    log.info(f'Norm of "{group_name}" = {condition_norm_inf}')
+                    log.info(f'after scaling = {problem.hm_norm_inf}')
                 else:
-                    scaling_factor = scaling_factors[j]
+                    problem.scale(scaling_factors[j])
 
-                if element_type.__name__ == 'NormalDistance':
-                    scaling_factor *= 1e-4
-
-                f += problem.f * scaling_factor
-                g += problem.df * scaling_factor
-                h += problem.hm_values * scaling_factor
+                f += problem.f
+                g += problem.df
+                h += problem.hm_values
 
             problem.f = f
             problem.df[:] = g

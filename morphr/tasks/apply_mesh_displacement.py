@@ -45,8 +45,7 @@ class ApplyMeshDisplacement(mo.Task):
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
-
-        data['elements'] = elements = data.get('elements', [])
+        elements = []
 
         rtree = an.RTree3D(len(faces))
 
@@ -87,7 +86,7 @@ class ApplyMeshDisplacement(mo.Task):
                 if self.debug:
                     cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
-                indices = rtree.by_point(location, model_tolerance)
+                indices = rtree.by_point(location, model_tolerance * 2)
 
                 min_distance2 = float('inf')
                 min_location = None
@@ -160,6 +159,9 @@ class ApplyMeshDisplacement(mo.Task):
                 elements.append(element)
 
                 nb_conditions += 1
+
+        data['elements'] = data.get('elements', [])
+        data['elements'].append(('MeshDisplacement', elements, self.penalty))
 
         # output
 

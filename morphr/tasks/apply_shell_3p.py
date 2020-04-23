@@ -11,6 +11,7 @@ class ApplyShell3P(mo.Task):
     thickness: float
     youngs_modulus: float
     poissons_ratio: float
+    weight: float = 1
 
     def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
@@ -21,8 +22,7 @@ class ApplyShell3P(mo.Task):
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
-
-        data['elements'] = elements = data.get('elements', [])
+        elements =[]
 
         thickness = self.thickness
         youngs_modulus = self.youngs_modulus
@@ -48,6 +48,9 @@ class ApplyShell3P(mo.Task):
                 elements.append(element)
 
                 nb_conditions += 1
+
+        data['elements'] = data.get('elements', [])
+        data['elements'].append(('Shell3P', elements, self.weight))
 
         # output
 
