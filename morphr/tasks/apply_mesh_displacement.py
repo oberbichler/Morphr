@@ -100,8 +100,6 @@ class ApplyMeshDisplacement(mo.Task):
 
                     closest_point, parameter = an.Triangle3D.projection(location, va, vb, vc)
 
-                    parameter = np.array([parameter[2], parameter[1], parameter[0]])
-
                     if np.min(parameter) < 0 or np.max(parameter) > 1:
                         continue
 
