@@ -1,8 +1,9 @@
 from morphr.configuration import Configuration, DebugData, Job, Task
 
-from morphr.constraints.point_coupling import PointCoupling
+from morphr.constraints.normal_distance import NormalDistance
+from morphr.constraints.point_distance import PointDistance
 from morphr.constraints.point_node_coupling import PointNodeCoupling
-from morphr.constraints.point_support import PointSupport
+from morphr.constraints.point_location import PointLocation
 from morphr.constraints.rotation_coupling import RotationCoupling
 from morphr.constraints.shell_3p import Shell3P
 
@@ -28,9 +29,10 @@ __all__ = [
     'Logger',
     'Task',
     # constraints
-    'PointCoupling',
+    'NormalDistance',
+    'PointDistance',
     'PointNodeCoupling',
-    'PointSupport',
+    'PointLocation',
     'RotationCoupling',
     'Shell3P',
     # tasks

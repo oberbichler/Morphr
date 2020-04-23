@@ -34,3 +34,6 @@ class Logger:
         if self.info_level < 2:
             return
         print(text)
+
+    def warning(self, text):
+        print(Fore.RED + text + Style.RESET_ALL)

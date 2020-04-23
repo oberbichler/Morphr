@@ -1,10 +1,13 @@
-from morphr import PointSupport, Task
-import numpy as np
-import eqlib as eq
+import morphr as mo
+
 import anurbs as an
+import eqlib as eq
+import numpy as np
+
+POINT_LOCATION = mo.PointLocation
 
 
-class ApplyMeshDisplacement(Task):
+class ApplyMeshDisplacement(mo.Task):
     penalty: float = 1
 
     def line_projection(self, point, a, b):
@@ -42,8 +45,7 @@ class ApplyMeshDisplacement(Task):
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
-
-        data['elements'] = elements = data.get('elements', [])
+        elements = []
 
         rtree = an.RTree3D(len(faces))
 
@@ -84,7 +86,7 @@ class ApplyMeshDisplacement(Task):
                 if self.debug:
                     cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
-                indices = rtree.by_point(location, model_tolerance)
+                indices = rtree.by_point(location, model_tolerance * 2)
 
                 min_distance2 = float('inf')
                 min_location = None
@@ -116,6 +118,7 @@ class ApplyMeshDisplacement(Task):
                         break
 
                 if min_face is None:
+                    log.warning('Projection failed! Check model_tolerance.')
                     continue
 
                 abc = faces[min_face]
@@ -144,14 +147,19 @@ class ApplyMeshDisplacement(Task):
                 span_data[span] = old_data + [element_data]
 
                 if self.debug:
-                    cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/ClosestPoints"}')
-                    cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementFields"}')
-                    cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projections"}')
+                    cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Source"}')
+                    cad_model.add(an.Point3D(location_target), r'{"layer": "Debug/ApplyMeshDisplacement/Target"}')
+                    cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementField"}')
+                    cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projection"}')
 
-                element = PointSupport(nodes[nonzero_indices], shape_functions, min_location + displacement, weight * penalty)
+                element = POINT_LOCATION(nodes[nonzero_indices])
+                element.add(shape_functions, location_target, weight * penalty)
                 elements.append(element)
 
                 nb_conditions += 1
+
+        data['elements'] = data.get('elements', [])
+        data['elements'].append(('MeshDisplacement', elements, self.penalty))
 
         # output
 

@@ -1,28 +1,30 @@
 from morphr import Task
 import eqlib as eq
 import numpy as np
-import scipy.sparse.linalg as la
-
-
-def inf_norm(sparse_matrix):
-    return la.norm(sparse_matrix, np.inf)
+import time
 
 
 class SolveNonlinear(Task):
     max_iterations: int = 100
     damping: float = 0
     auto_scale: bool = False
+    nb_threads: int = 1
 
     def run(self, config, job, data, log):
-        elements = data.get('elements', None)
+        element_groups = data.get('elements', None)
 
-        problem = eq.Problem(elements, nb_threads=1)
+        elements = []
+
+        for _, group_elements, _ in element_groups:
+            elements.extend(group_elements)
+
+        problem = eq.Problem(elements, nb_threads=self.nb_threads)
 
         log.info(f'{len(elements)} conditions')
         log.info(f'{problem.nb_variables} variables')
 
         if self.auto_scale:
-            self.solve_auto_scale(log, problem, elements)
+            self.solve_auto_scale(log, problem, elements, element_groups)
         else:
             self.solve(log, problem)
 
@@ -46,54 +48,63 @@ class SolveNonlinear(Task):
             log.info(f'rnorm = {np.linalg.norm(problem.df)}')
             log.info(f'xnorm = {np.linalg.norm(dx)}')
 
-    def solve_auto_scale(self, log, problem, elements):
-        from morphr import PointSupport
+    def solve_auto_scale(self, log, problem, elements, element_groups):
+        f = np.empty_like(problem.f, float)
+        g = np.empty_like(problem.df, float)
+        h = np.empty_like(problem.hm_values, float)
 
-        system_element_types = [PointSupport]
-        condition_element_types = set([type(element) for element in elements if type(element) not in system_element_types])
+        scaling_factors = np.empty(len(element_groups), float)
 
-        f = np.zeros_like(problem.f)
-        g = np.zeros_like(problem.df)
-        h = np.zeros_like(problem.hm_values)
+        for iteration in range(self.max_iterations):
+            log.info(f'Iteration {iteration+1}/{self.max_iterations}...')
 
-        for i in range(self.max_iterations):
-            log.info(f'Iteration {i+1}/{self.max_iterations}...')
+            f.fill(0)
+            g.fill(0)
+            h.fill(0)
 
-            for element in elements:
-                element.is_active = type(element) in system_element_types
+            for j, (group_name, group_elements, group_weight) in enumerate(element_groups):
+                log.info(f'Compute "{group_name}" ({len(group_elements)} @ {group_weight})...')
 
-            problem.compute()
-
-            system_norm_inf = inf_norm(problem.hm)
-
-            f += problem.f
-            g += problem.df
-            h += problem.hm_values
-
-            log.info(f'Norm System = {system_norm_inf}')
-
-            for element_type in condition_element_types:
                 for element in elements:
-                    element.is_active = isinstance(element, element_type)
+                    element.is_active = False
+
+                for element in group_elements:
+                    element.is_active = True
+
+                start_time = time.perf_counter()
 
                 problem.compute()
 
-                condition_norm_inf = inf_norm(problem.hm)
+                end_time = time.perf_counter()
+                time_ellapsed = end_time - start_time
+                time_ellapsed_per_element = time_ellapsed / len(group_elements)
+                log.info(f'Computation of {group_name} in {time_ellapsed:.2f} sec')
+                log.info(f'{time_ellapsed_per_element:.5f} sec/element')
 
-                factor = system_norm_inf / condition_norm_inf
+                if iteration == 0:
+                    condition_norm_inf = problem.hm_norm_inf
 
-                f += problem.f * factor
-                g += problem.df * factor
-                h += problem.hm_values * factor
+                    scaling_factor = group_weight / condition_norm_inf
 
-                log.info(f'Norm {element_type.__name__} = {condition_norm_inf}')
+                    scaling_factors[j] = scaling_factor
+
+                    problem.scale(scaling_factor)
+
+                    log.info(f'Norm of "{group_name}" = {condition_norm_inf}')
+                    log.info(f'after scaling = {problem.hm_norm_inf}')
+                else:
+                    problem.scale(scaling_factors[j])
+
+                f += problem.f
+                g += problem.df
+                h += problem.hm_values
 
             problem.f = f
             problem.df[:] = g
             problem.hm_values[:] = h
 
             if self.damping != 0:
-                problem.hm_add_diagonal(system_norm_inf * self.damping)
+                problem.hm_add_diagonal(self.damping)
 
             dx = problem.hm_inv_v(g)
 
