@@ -1,20 +1,26 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_2
+from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
 
 class PointLocation(eq.Objective):
-    def __init__(self, nodes, shape_functions, target, weight):
+    def __init__(self, nodes):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)
-        self.shape_functions = np.asarray(shape_functions, float)
-        self.target = self.ref_location if target is None else np.asarray(target, float)
-        self.weight = float(weight)
 
         variables = []
         for node in nodes:
             variables += [node.x, node.y, node.z]
         self.variables = variables
+
+        self.data = []
+
+    def add(self, shape_functions, target, weight):
+        shape_functions = np.asarray(shape_functions, float)
+        target = self.ref_location if target is None else np.asarray(target, float)
+        weight = float(weight)
+
+        self.data.append((shape_functions, target, weight))
 
     @property
     def ref_location(self):
@@ -24,16 +30,15 @@ class PointLocation(eq.Objective):
     def act_location(self):
         return evaluate_act(self.nodes, self.shape_functions[0])
 
-    def evaluate_act_2(self, index):
-        nb_dofs = len(self.nodes) * 3
-        return evaluate_act_2(self.nodes, self.shape_functions[index], nb_dofs, 0)
-
     def compute(self, g, h):
-        x = self.evaluate_act_2(0)
+        p = 0
 
-        delta = self.target - x
+        for shape_functions, target, weight in self.data:
+            act_x = evaluate_act_geometry_hj(self.nodes, shape_functions[0])
 
-        p = np.dot(delta, delta) * self.weight / 2
+            delta = target - act_x
+
+            p += np.dot(delta, delta) * weight / 2
 
         g[:] = p.g
         h[:] = p.h

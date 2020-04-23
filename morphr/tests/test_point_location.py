@@ -35,7 +35,10 @@ def element():
 
     weight = DATA['weight']
 
-    return PointLocation(nodes, shape_functions, target, weight)
+    element = PointLocation(nodes)
+    element.add(shape_functions, target, weight)
+
+    return element
 
 
 def test_element(element):

@@ -1,10 +1,13 @@
-from morphr import PointNodeCoupling, Task
-import numpy as np
-import eqlib as eq
+import morphr as mo
+
 import anurbs as an
+import eqlib as eq
+import numpy as np
+
+POINT_NODE_COUPLING = mo.PointNodeCoupling
 
 
-class ApplyAlphaRegularization(Task):
+class ApplyAlphaRegularization(mo.Task):
     penalty: float = 1.0
 
     def run(self, config, job, data, log):
@@ -38,7 +41,7 @@ class ApplyAlphaRegularization(Task):
 
                     nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
 
-                    element = PointNodeCoupling(nodes[nonzero_indices], shape_functions, target_node, self.penalty)
+                    element = POINT_NODE_COUPLING(nodes[nonzero_indices], shape_functions, target_node, self.penalty)
                     elements.append(element)
 
                     nb_conditions += 1

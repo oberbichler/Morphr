@@ -1,10 +1,13 @@
-from morphr import Shell3P, Task
-import numpy as np
-import eqlib as eq
+import morphr as mo
+
 import anurbs as an
+import eqlib as eq
+import numpy as np
+
+SHELL_3P = mo.Shell3P
 
 
-class ApplyShell3P(Task):
+class ApplyShell3P(mo.Task):
     thickness: float
     youngs_modulus: float
     poissons_ratio: float
@@ -41,7 +44,7 @@ class ApplyShell3P(Task):
             for u, v, weight in an.integration_points(face, model_tolerance):
                 nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
 
-                element = Shell3P(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
+                element = SHELL_3P(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
                 elements.append(element)
 
                 nb_conditions += 1

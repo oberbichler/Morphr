@@ -54,7 +54,10 @@ def element():
 
     weight = DATA['weight']
 
-    return RotationCoupling(nodes_a, nodes_b, shape_functions_a, shape_functions_b, axis, weight=weight)
+    element = RotationCoupling(nodes_a, nodes_b)
+    element.add(shape_functions_a, shape_functions_b, axis, weight)
+
+    return element
 
 
 def test_element(element):

@@ -51,14 +51,20 @@ class SolveNonlinear(Task):
     def solve_auto_scale(self, log, problem, elements):
         element_types = set([type(element) for element in elements])
 
-        f = np.zeros_like(problem.f)
-        g = np.zeros_like(problem.df)
-        h = np.zeros_like(problem.hm_values)
+        f = np.empty_like(problem.f, float)
+        g = np.empty_like(problem.df, float)
+        h = np.empty_like(problem.hm_values, float)
+
+        scaling_factors = np.empty(len(element_types), float)
 
         for i in range(self.max_iterations):
             log.info(f'Iteration {i+1}/{self.max_iterations}...')
 
-            for element_type in element_types:
+            f.fill(0)
+            g.fill(0)
+            h.fill(0)
+
+            for j, element_type in enumerate(element_types):
                 nb_elements = 0
 
                 for element in elements:
@@ -76,16 +82,26 @@ class SolveNonlinear(Task):
                 log.info(f'Computation of {element_type.__name__} in {time_ellapsed:.2f} sec')
                 log.info(f'{time_ellapsed_per_element:.5f} sec/element')
 
-                condition_norm_inf = inf_norm(problem.hm)
+                if i == 0:
+                    lhs = problem.general_hm
 
-                factor = 1 / condition_norm_inf
+                    condition_norm_inf = inf_norm(lhs)
 
-                f += problem.f * factor
-                g += problem.df * factor
-                h += problem.hm_values * factor
+                    scaling_factor = 1 / condition_norm_inf
 
-                log.info(f'Norm {element_type.__name__} = {condition_norm_inf}')
-                log.info(f'Norm {element_type.__name__} = {inf_norm(problem.hm * factor)}')
+                    scaling_factors[j] = scaling_factor
+
+                    log.info(f'Norm {element_type.__name__} = {condition_norm_inf}')
+                    log.info(f'Norm {element_type.__name__} = {inf_norm(lhs * scaling_factor)}')
+                else:
+                    scaling_factor = scaling_factors[j]
+
+                if element_type.__name__ == 'NormalDistance':
+                    scaling_factor *= 1e-4
+
+                f += problem.f * scaling_factor
+                g += problem.df * scaling_factor
+                h += problem.hm_values * scaling_factor
 
             problem.f = f
             problem.df[:] = g

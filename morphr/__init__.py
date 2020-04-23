@@ -1,5 +1,6 @@
 from morphr.configuration import Configuration, DebugData, Job, Task
 
+from morphr.constraints.normal_distance import NormalDistance
 from morphr.constraints.point_distance import PointDistance
 from morphr.constraints.point_node_coupling import PointNodeCoupling
 from morphr.constraints.point_location import PointLocation
@@ -28,6 +29,7 @@ __all__ = [
     'Logger',
     'Task',
     # constraints
+    'NormalDistance',
     'PointDistance',
     'PointNodeCoupling',
     'PointLocation',

@@ -43,7 +43,10 @@ def element():
 
     weight = DATA['weight']
 
-    return PointDistance(nodes_a, nodes_b, shape_functions_a, shape_functions_b, weight)
+    element = PointDistance(nodes_a, nodes_b)
+    element.add(shape_functions_a, shape_functions_b, weight)
+
+    return element
 
 
 def test_element(element):
