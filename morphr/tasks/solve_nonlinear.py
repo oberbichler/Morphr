@@ -55,8 +55,8 @@ class SolveNonlinear(Task):
 
         scaling_factors = np.empty(len(element_groups), float)
 
-        for i in range(self.max_iterations):
-            log.info(f'Iteration {i+1}/{self.max_iterations}...')
+        for iteration in range(self.max_iterations):
+            log.info(f'Iteration {iteration+1}/{self.max_iterations}...')
 
             f.fill(0)
             g.fill(0)
@@ -81,7 +81,7 @@ class SolveNonlinear(Task):
                 log.info(f'Computation of {group_name} in {time_ellapsed:.2f} sec')
                 log.info(f'{time_ellapsed_per_element:.5f} sec/element')
 
-                if i == 0:
+                if iteration == 0:
                     condition_norm_inf = problem.hm_norm_inf
 
                     scaling_factor = group_weight / condition_norm_inf
