@@ -8,7 +8,7 @@ POINT_NODE_COUPLING = mo.PointNodeCoupling
 
 
 class ApplyAlphaRegularization(mo.Task):
-    penalty: float = 1.0
+    weight: float = 1.0
 
     def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
@@ -41,7 +41,7 @@ class ApplyAlphaRegularization(mo.Task):
 
                     nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
 
-                    element = POINT_NODE_COUPLING(nodes[nonzero_indices], shape_functions, target_node, self.penalty)
+                    element = POINT_NODE_COUPLING(nodes[nonzero_indices], shape_functions, target_node, self.weight)
                     elements.append(element)
 
                     nb_conditions += 1
@@ -50,7 +50,7 @@ class ApplyAlphaRegularization(mo.Task):
                         cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('AlphaRegularization', elements, self.penalty))
+        data['elements'].append(('AlphaRegularization', elements, self.weight))
 
         # output
 
