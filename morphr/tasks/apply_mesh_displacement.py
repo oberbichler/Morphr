@@ -8,7 +8,7 @@ POINT_LOCATION = mo.PointLocation
 
 
 class ApplyMeshDisplacement(mo.Task):
-    penalty: float = 1
+    weight: float = 1
 
     def line_projection(self, point, a, b):
         dif = b - a
@@ -37,7 +37,6 @@ class ApplyMeshDisplacement(mo.Task):
         vertices = data.get('vertices', None)
         displacements = data.get('displacements', None)
         faces = data.get('faces', None)
-        penalty = self.penalty
         model_tolerance = job.model_tolerance
 
         nb_conditions = 0
@@ -64,9 +63,6 @@ class ApplyMeshDisplacement(mo.Task):
 
         for key, face in cad_model.of_type('BrepFace'):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
-
-            span_nodes = dict()
-            span_data = dict()
 
             if surface_geometry_key not in data['nodes']:
                 nodes = []
@@ -132,20 +128,6 @@ class ApplyMeshDisplacement(mo.Task):
                 location_source = min_location
                 location_target = min_location + displacement
 
-                element_data = [shape_functions, min_location - displacement, weight * penalty]
-
-                span_u = an.upper_span(surface_geometry.degree_u, surface_geometry.knots_u, u)
-                span_v = an.upper_span(surface_geometry.degree_v, surface_geometry.knots_v, v)
-
-                span = (span_u, span_v)
-
-                old_data = span_data.get(span, [])
-
-                if len(old_data) == 0:
-                    span_nodes[span] = nodes[nonzero_indices]
-
-                span_data[span] = old_data + [element_data]
-
                 if self.debug:
                     cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Source"}')
                     cad_model.add(an.Point3D(location_target), r'{"layer": "Debug/ApplyMeshDisplacement/Target"}')
@@ -153,13 +135,13 @@ class ApplyMeshDisplacement(mo.Task):
                     cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projection"}')
 
                 element = POINT_LOCATION(nodes[nonzero_indices])
-                element.add(shape_functions, location_target, weight * penalty)
+                element.add(shape_functions, location_target, weight * self.weight)
                 elements.append(element)
 
                 nb_conditions += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('MeshDisplacement', elements, self.penalty))
+        data['elements'].append(('MeshDisplacement', elements, self.weight))
 
         # output
 

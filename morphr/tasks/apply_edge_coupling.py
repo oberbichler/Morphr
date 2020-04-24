@@ -4,19 +4,25 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
+from typing import Dict, Union
+
 POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.RotationCoupling  # mo.NormalDistance
+NORMAL_DISTANCE = mo.NormalDistance  # mo.RotationCoupling  # mo.NormalDistance
 
 
 class ApplyEdgeCoupling(mo.Task):
-    penalty_displacement: float = 1.0
-    penalty_rotation: float = 1.0
+    weight: Union[float, Dict[str, float]] = 1.0
 
     def run(self, config, job, data, log):
         model_tolerance = job.model_tolerance
         cad_model = data.get('cad_model', None)
-        penalty_displacement = self.penalty_displacement
-        penalty_rotation = self.penalty_rotation
+
+        if isinstance(self.weight, float):
+            weight_displacement = self.weight
+            weight_rotation = self.weight
+        else:
+            weight_displacement = self.weight.get('displacement', 0)
+            weight_rotation = self.weight.get('rotation', 0)
 
         # FIXME: Check for None
 
@@ -71,19 +77,19 @@ class ApplyEdgeCoupling(mo.Task):
                 element_nodes_a = [nurbs_surface_nodes_a[i] for i in indices_a]
                 element_nodes_b = [nurbs_surface_nodes_b[i] for i in indices_b]
 
-                if penalty_displacement != 0:
+                if weight_displacement != 0:
                     element = POINT_DISTANCE(element_nodes_a, element_nodes_b)
-                    element.add(shape_functions_a, shape_functions_b, weight * penalty_displacement)
+                    element.add(shape_functions_a, shape_functions_b, weight * weight_displacement)
                     point_distance_group.append(element)
 
                     nb_conditions += 1
 
-                if penalty_rotation != 0:
+                if weight_rotation != 0:
                     _, axis = trim_a.curve_3d.derivatives_at(t_a, order=1)
                     axis /= np.linalg.norm(axis)
 
                     element = NORMAL_DISTANCE(element_nodes_a, element_nodes_b)
-                    element.add(shape_functions_a, shape_functions_b, axis, weight=weight * penalty_rotation)
+                    element.add(shape_functions_a, shape_functions_b, weight=weight * weight_rotation)
                     normal_distance_group.append(element)
 
                     nb_conditions += 1
@@ -97,16 +103,16 @@ class ApplyEdgeCoupling(mo.Task):
                     cad_model.add(an.Point3D(point_a), r'{"layer": "Debug/ApplyEdgeCoupling/PointsA"}')
                     cad_model.add(an.Point3D(point_b), r'{"layer": "Debug/ApplyEdgeCoupling/PointsB"}')
 
-                    if penalty_rotation != 0:
+                    if weight_rotation != 0:
                         cad_model.add(an.Line3D(point_a, point_a + axis), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
 
         data['elements'] = data.get('elements', [])
 
-        if self.penalty_displacement != 0:
-            data['elements'].append(('DisplacementCoupling', point_distance_group, self.penalty_displacement))
+        if weight_displacement != 0:
+            data['elements'].append(('DisplacementCoupling', point_distance_group, weight_displacement))
 
-        if self.penalty_rotation != 0:
-            data['elements'].append(('RotationCoupling', normal_distance_group, self.penalty_rotation))
+        if weight_rotation != 0:
+            data['elements'].append(('RotationCoupling', normal_distance_group, weight_rotation))
 
         # output
 

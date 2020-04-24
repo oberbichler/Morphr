@@ -30,7 +30,7 @@ class SolveNonlinear(Task):
 
         for surface, nodes in data['nodes'].items():
             for i, node in enumerate(nodes):
-                surface.set_pole(i, node.act_location)
+                surface.poles[i] = node.act_location
 
     def solve(self, log, problem):
         for i in range(self.max_iterations):
