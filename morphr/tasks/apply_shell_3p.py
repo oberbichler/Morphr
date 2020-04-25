@@ -44,7 +44,8 @@ class ApplyShell3P(mo.Task):
             for u, v, weight in an.integration_points(face, model_tolerance):
                 nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
 
-                element = SHELL_3P(nodes[nonzero_indices], shape_functions, thickness, youngs_modulus, poissons_ratio, weight)
+                element = SHELL_3P(nodes[nonzero_indices], thickness, youngs_modulus, poissons_ratio)
+                element.add(shape_functions, weight)
                 elements.append(element)
 
                 nb_conditions += 1

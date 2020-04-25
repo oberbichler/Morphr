@@ -42,15 +42,14 @@ def element():
 
     weight = DATA['weight']
 
-    return Shell3P(nodes, shape_functions, 1, 1, 0.0, weight)
+    element = Shell3P(nodes, 1, 1, 0.0)
+    element.add(shape_functions, weight)
+
+    return element
 
 
 def test_element(element):
     f, g, h = element.compute_all()
-
-    assert_almost_equal(element.dm, DATA['Dm'])
-    assert_almost_equal(element.db, DATA['Db'])
-    assert_almost_equal(element.tm, DATA['Tm'])
 
     assert_almost_equal(f, np.multiply(DATA['exp_f'], 0.5))
     assert_almost_equal(g, np.multiply(DATA['exp_g'], 0.5))

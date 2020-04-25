@@ -1,17 +1,15 @@
 import eqlib as eq
 import numpy as np
-from morphr.objectives.utility import evaluate_ref, evaluate_act_2
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
 
 class Shell3P(eq.Objective):
-    def __init__(self, nodes, shape_functions, thickness, youngs_modulus, poissons_ratio, weight):
+    def __init__(self, nodes, thickness, youngs_modulus, poissons_ratio):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)
-        self.shape_functions = np.asarray(shape_functions, float)
         self.thickness = float(thickness)
         self.youngs_modulus = float(youngs_modulus)
         self.poissons_ratio = float(poissons_ratio)
-        self.weight = float(weight)
 
         variables = []
         for node in nodes:
@@ -30,21 +28,29 @@ class Shell3P(eq.Objective):
             [0, 0, (1.0 - poissons_ratio) / 2.0],
         ]) * youngs_modulus * np.power(thickness, 3) / (12.0 * (1.0 - np.power(poissons_ratio, 2)))
 
-        A1 = self.evaluate_ref(1)
-        A2 = self.evaluate_ref(2)
+        self.data = []
 
-        A1_1 = self.evaluate_ref(3)
-        A2_2 = self.evaluate_ref(4)
-        A1_2 = self.evaluate_ref(5)
+    def add(self, shape_functions, weight):
+        shape_functions = np.asarray(shape_functions, float)
+        weight = float(weight)
 
-        A11, A22, A12 = np.dot(A1, A1), np.dot(A2, A2), np.dot(A1, A2)
+        A1 = evaluate_ref(self.nodes, shape_functions[1])
+        A2 = evaluate_ref(self.nodes, shape_functions[2])
+
+        A1_1 = evaluate_ref(self.nodes, shape_functions[3])
+        A2_2 = evaluate_ref(self.nodes, shape_functions[4])
+        A1_2 = evaluate_ref(self.nodes, shape_functions[5])
+
+        A11 = np.dot(A1, A1)
+        A22 = np.dot(A2, A2)
+        A12 = np.dot(A1, A2)
 
         A3 = np.cross(A1, A2)
         dA = np.linalg.norm(A3)
         A3 = A3 / dA
 
-        self.ref_a = np.array([A11, A22, A12])
-        self.ref_b = np.dot([A1_1, A2_2, A1_2], A3)
+        ref_a = np.array([A11, A22, A12])
+        ref_b = np.dot([A1_1, A2_2, A1_2], A3)
 
         e1 = A1 / np.linalg.norm(A1)
         e2 = A2 - np.dot(A2, e1) * e1
@@ -62,37 +68,35 @@ class Shell3P(eq.Objective):
         eg21 = np.dot(e2, g_con1)
         eg22 = np.dot(e2, g_con2)
 
-        self.tm = np.array([
+        tm = np.array([
             [eg11 * eg11, eg12 * eg12, 2 * eg11 * eg12],
             [eg21 * eg21, eg22 * eg22, 2 * eg21 * eg22],
             [2 * eg11 * eg21, 2 * eg12 * eg22, 2 * (eg11 * eg22 + eg12 * eg21)],
         ])
 
-    def evaluate_ref(self, index):
-        return evaluate_ref(self.nodes, self.shape_functions[index])
-
-    def evaluate_act_2(self, index):
-        nb_dofs = len(self.nodes) * 3
-        return evaluate_act_2(self.nodes, self.shape_functions[index], nb_dofs, 0)
+        self.data.append((shape_functions, ref_a, ref_b, tm, weight))
 
     def compute(self, g, h):
-        a1 = self.evaluate_act_2(1)
-        a2 = self.evaluate_act_2(2)
+        p = 0
 
-        a1_1 = self.evaluate_act_2(3)
-        a1_2 = self.evaluate_act_2(4)
-        a2_2 = self.evaluate_act_2(5)
+        for shape_functions, ref_a, ref_b, tm, weight in self.data:
+            a1 = evaluate_act_geometry_hj(self.nodes, shape_functions[1])
+            a2 = evaluate_act_geometry_hj(self.nodes, shape_functions[2])
 
-        a3 = np.cross(a1, a2)
-        a3 /= np.linalg.norm(a3)
+            a1_1 = evaluate_act_geometry_hj(self.nodes, shape_functions[3])
+            a1_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[4])
+            a2_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[5])
 
-        act_a = np.array([np.dot(a1, a1), np.dot(a2, a2), np.dot(a1, a2)])
-        act_b = np.dot([a1_1, a1_2, a2_2], a3)
+            a3 = np.cross(a1, a2)
+            a3 /= np.linalg.norm(a3)
 
-        eps = np.dot(self.tm, act_a - self.ref_a) / 2
-        kap = np.dot(self.tm, self.ref_b - act_b)
+            act_a = np.array([np.dot(a1, a1), np.dot(a2, a2), np.dot(a1, a2)])
+            act_b = np.dot([a1_1, a1_2, a2_2], a3)
 
-        p = (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * self.weight
+            eps = np.dot(tm, act_a - ref_a) / 2
+            kap = np.dot(tm, ref_b - act_b)
+
+            p += (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * weight
 
         g[:] = p.g / 2
         h[:] = p.h / 2
