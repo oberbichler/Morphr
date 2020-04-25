@@ -1,6 +1,6 @@
 from colorama import init, Fore, Style
-from typing import List, Optional
-from pydantic import BaseModel
+
+init()
 
 
 class Logger:
@@ -37,3 +37,8 @@ class Logger:
 
     def warning(self, text):
         print(Fore.RED + text + Style.RESET_ALL)
+
+    def benchmark(self, text):
+        if self.info_level < 10:
+            return
+        print(Fore.LIGHTCYAN_EX + text + Style.RESET_ALL)
