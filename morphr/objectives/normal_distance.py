@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
+from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
 
 
 class NormalDistance(eq.Objective):
@@ -16,17 +16,18 @@ class NormalDistance(eq.Objective):
 
         self.data = []
 
-    def add(self, shape_functions_a, shape_functions_b, weight):
+    def add(self, shape_functions_a, shape_functions_b, angle=0, weight=1):
         shape_functions_a = np.asarray(shape_functions_a, float)
         shape_functions_b = np.asarray(shape_functions_b, float)
+        target = float(angle)  # 2 * np.sin(float(angle) / 2) if angle != 0 else 0.0
         weight = float(weight)
 
-        self.data.append((shape_functions_a, shape_functions_b, weight))
+        self.data.append((shape_functions_a, shape_functions_b, target, weight))
 
     def compute(self, g, h):
         p = 0
 
-        for shape_functions_a, shape_functions_b, weight in self.data:
+        for shape_functions_a, shape_functions_b, target, weight in self.data:
             a1_a = evaluate_act_geometry_hj_a(self.nodes_a, shape_functions_a[1], self.nb_variables)
             a2_a = evaluate_act_geometry_hj_a(self.nodes_a, shape_functions_a[2], self.nb_variables)
 
@@ -37,10 +38,14 @@ class NormalDistance(eq.Objective):
 
             a3_b = normalized(np.cross(a1_b, a2_b))
 
-            delta = a3_a - a3_b
+            if target == 0:
+                delta = a3_a - a3_b
+                p += np.dot(delta, delta) * weight
+            else:
+                angle = np.arccos(np.dot(a3_a, a3_b))
+                p += (angle - target)**2 * weight
+                # p += (np.linalg.norm(delta) - target)**2 * weight
 
-            p += np.dot(delta, delta) * weight / 2
-
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        g[:] = p.g / 2
+        h[:] = p.h / 2
+        return p.f / 2

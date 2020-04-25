@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
 
 
 class RotationCoupling(eq.Objective):
@@ -81,8 +81,8 @@ class RotationCoupling(eq.Objective):
 
             angular_difference = angle_a - angle_b
 
-            p += angular_difference**2 * weight / 2
+            p += angular_difference**2 * weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        g[:] = p.g / 2
+        h[:] = p.h / 2
+        return p.f / 2

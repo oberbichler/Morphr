@@ -39,7 +39,7 @@ class ApplyMeshDisplacement(mo.Task):
         faces = data.get('faces', None)
         model_tolerance = job.model_tolerance
 
-        nb_conditions = 0
+        nb_objectives = 0
 
         # FIXME: Check for None
 
@@ -138,11 +138,11 @@ class ApplyMeshDisplacement(mo.Task):
                 element.add(shape_functions, location_target, weight * self.weight)
                 elements.append(element)
 
-                nb_conditions += 1
+                nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
         data['elements'].append(('MeshDisplacement', elements, self.weight))
 
         # output
 
-        log.info(f'{nb_conditions} new conditions')
+        log.info(f'{nb_objectives} new objectives')

@@ -1,4 +1,4 @@
-from morphr.constraints.point_node_coupling import PointNodeCoupling
+from morphr.objectives.point_node_coupling import PointNodeCoupling
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal

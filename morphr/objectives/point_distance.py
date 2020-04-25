@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b
+from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b
 
 
 class PointDistance(eq.Objective):
@@ -52,8 +52,8 @@ class PointDistance(eq.Objective):
 
             delta = x_b - x_a
 
-            p += np.dot(delta, delta) * weight / 2
+            p += np.dot(delta, delta) * weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        g[:] = p.g / 2
+        h[:] = p.h / 2
+        return p.f / 2

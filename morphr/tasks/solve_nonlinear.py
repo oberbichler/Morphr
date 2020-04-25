@@ -20,7 +20,7 @@ class SolveNonlinear(Task):
 
         problem = eq.Problem(elements, nb_threads=self.nb_threads)
 
-        log.info(f'{len(elements)} conditions')
+        log.info(f'{len(elements)} objectives')
         log.info(f'{problem.nb_variables} variables')
 
         if self.auto_scale:
@@ -63,7 +63,7 @@ class SolveNonlinear(Task):
             h.fill(0)
 
             for j, (group_name, group_elements, group_weight) in enumerate(element_groups):
-                log.info(f'Compute "{group_name}" ({len(group_elements)} @ {group_weight})...')
+                log.benchmark(f'Compute "{group_name}" ({len(group_elements)} @ {group_weight})...')
 
                 for element in elements:
                     element.is_active = False
@@ -78,8 +78,8 @@ class SolveNonlinear(Task):
                 end_time = time.perf_counter()
                 time_ellapsed = end_time - start_time
                 time_ellapsed_per_element = time_ellapsed / len(group_elements)
-                log.info(f'Computation of {group_name} in {time_ellapsed:.2f} sec')
-                log.info(f'{time_ellapsed_per_element:.5f} sec/element')
+                log.benchmark(f'Computation of {group_name} in {time_ellapsed:.2f} sec')
+                log.benchmark(f'{time_ellapsed_per_element:.5f} sec/element')
 
                 if iteration == 0:
                     condition_norm_inf = problem.hm_norm_inf
@@ -90,8 +90,8 @@ class SolveNonlinear(Task):
 
                     problem.scale(scaling_factor)
 
-                    log.info(f'Norm of "{group_name}" = {condition_norm_inf}')
-                    log.info(f'after scaling = {problem.hm_norm_inf}')
+                    # log.info(f'Norm of "{group_name}" = {condition_norm_inf}')
+                    # log.info(f'after scaling = {problem.hm_norm_inf}')
                 else:
                     problem.scale(scaling_factors[j])
 

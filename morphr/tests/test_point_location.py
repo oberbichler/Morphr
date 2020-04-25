@@ -1,4 +1,4 @@
-from morphr.constraints.point_location import PointLocation
+from morphr.objectives.point_location import PointLocation
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal

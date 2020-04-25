@@ -19,7 +19,7 @@ setup(
     version=get_version(os.path.join('morphr', '__init__.py')),
     packages=[
         'morphr',
-        'morphr.constraints',
+        'morphr.objectives',
         'morphr.tasks',
         'morphr.tests',
     ],

@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
 
 class PointLocation(eq.Objective):
@@ -38,8 +38,8 @@ class PointLocation(eq.Objective):
 
             delta = target - act_x
 
-            p += np.dot(delta, delta) * weight / 2
+            p += np.dot(delta, delta) * weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        g[:] = p.g / 2
+        h[:] = p.h / 2
+        return p.f / 2

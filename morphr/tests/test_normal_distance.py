@@ -1,4 +1,4 @@
-from morphr.constraints.normal_distance import NormalDistance
+from morphr.objectives.normal_distance import NormalDistance
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -53,7 +53,7 @@ def element():
     weight = DATA['weight']
 
     element = NormalDistance(nodes_a, nodes_b)
-    element.add(shape_functions_a, shape_functions_b, weight)
+    element.add(shape_functions_a, shape_functions_b, weight=weight)
 
     return element
 

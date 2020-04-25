@@ -26,7 +26,7 @@ class ApplyEdgeCoupling(mo.Task):
 
         # FIXME: Check for None
 
-        nb_conditions = 0
+        nb_objectives = 0
 
         data['nodes'] = nodes = data.get('nodes', {})
         point_distance_group = []
@@ -82,7 +82,7 @@ class ApplyEdgeCoupling(mo.Task):
                     element.add(shape_functions_a, shape_functions_b, weight * weight_displacement)
                     point_distance_group.append(element)
 
-                    nb_conditions += 1
+                    nb_objectives += 1
 
                 if weight_rotation != 0:
                     _, axis = trim_a.curve_3d.derivatives_at(t_a, order=1)
@@ -92,7 +92,7 @@ class ApplyEdgeCoupling(mo.Task):
                     element.add(shape_functions_a, shape_functions_b, weight=weight * weight_rotation)
                     normal_distance_group.append(element)
 
-                    nb_conditions += 1
+                    nb_objectives += 1
 
                     if self.debug:
                         cad_model.add(an.Point3D(element.act_b), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
@@ -116,4 +116,4 @@ class ApplyEdgeCoupling(mo.Task):
 
         # output
 
-        log.info(f'{nb_conditions} new conditions')
+        log.info(f'{nb_objectives} new objectives')

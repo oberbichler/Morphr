@@ -1,4 +1,4 @@
-from morphr.constraints.point_distance import PointDistance
+from morphr.objectives.point_distance import PointDistance
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
