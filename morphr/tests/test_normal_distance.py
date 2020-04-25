@@ -53,7 +53,7 @@ def element():
     weight = DATA['weight']
 
     element = NormalDistance(nodes_a, nodes_b)
-    element.add(shape_functions_a, shape_functions_b, weight)
+    element.add(shape_functions_a, shape_functions_b, weight=weight)
 
     return element
 
