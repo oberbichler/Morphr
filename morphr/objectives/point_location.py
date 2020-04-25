@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
 
 class PointLocation(eq.Objective):

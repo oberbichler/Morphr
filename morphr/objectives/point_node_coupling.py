@@ -1,7 +1,7 @@
 import eqlib as eq
 import numpy as np
 import hyperjet as hj
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_2
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_2
 
 
 class PointNodeCoupling(eq.Objective):

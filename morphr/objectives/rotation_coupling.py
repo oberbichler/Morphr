@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
+from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
 
 
 class RotationCoupling(eq.Objective):

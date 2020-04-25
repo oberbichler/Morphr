@@ -1,6 +1,6 @@
 import eqlib as eq
 import numpy as np
-from morphr.constraints.utility import evaluate_ref, evaluate_act_2
+from morphr.objectives.utility import evaluate_ref, evaluate_act_2
 
 
 class Shell3P(eq.Objective):

@@ -1,4 +1,4 @@
-from morphr.constraints.shell_3p import Shell3P
+from morphr.objectives.shell_3p import Shell3P
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal

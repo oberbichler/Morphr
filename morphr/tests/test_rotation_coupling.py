@@ -1,4 +1,4 @@
-from morphr.constraints.rotation_coupling import RotationCoupling
+from morphr.objectives.rotation_coupling import RotationCoupling
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
