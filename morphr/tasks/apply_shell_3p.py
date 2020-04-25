@@ -17,12 +17,12 @@ class ApplyShell3P(mo.Task):
         cad_model = data.get('cad_model', None)
         model_tolerance = job.model_tolerance
 
-        nb_conditions = 0
+        nb_objectives = 0
 
         # FIXME: Check for None
 
         data['nodes'] = data.get('nodes', {})
-        elements =[]
+        elements = []
 
         thickness = self.thickness
         youngs_modulus = self.youngs_modulus
@@ -48,11 +48,11 @@ class ApplyShell3P(mo.Task):
                 element.add(shape_functions, weight)
                 elements.append(element)
 
-                nb_conditions += 1
+                nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
         data['elements'].append(('Shell3P', elements, self.weight))
 
         # output
 
-        log.info(f'{nb_conditions} new conditions')
+        log.info(f'{nb_objectives} new objectives')

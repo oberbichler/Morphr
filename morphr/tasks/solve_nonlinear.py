@@ -20,7 +20,7 @@ class SolveNonlinear(Task):
 
         problem = eq.Problem(elements, nb_threads=self.nb_threads)
 
-        log.info(f'{len(elements)} conditions')
+        log.info(f'{len(elements)} objectives')
         log.info(f'{problem.nb_variables} variables')
 
         if self.auto_scale:

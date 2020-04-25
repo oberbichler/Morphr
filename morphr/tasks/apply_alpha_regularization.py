@@ -19,7 +19,7 @@ class ApplyAlphaRegularization(mo.Task):
 
         elements = []
 
-        nb_conditions = 0
+        nb_objectives = 0
 
         for key, face in cad_model.of_type('BrepFace'):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
@@ -44,7 +44,7 @@ class ApplyAlphaRegularization(mo.Task):
                     element = POINT_NODE_COUPLING(nodes[nonzero_indices], shape_functions, target_node, self.weight)
                     elements.append(element)
 
-                    nb_conditions += 1
+                    nb_objectives += 1
 
                     if self.debug:
                         cad_model.add(an.Line3D(target_node.act_location, surface_geometry.point_at(u, v)), r'{"layer": "Debug/ApplyAlphaRegularization/Connections"}')
@@ -54,4 +54,4 @@ class ApplyAlphaRegularization(mo.Task):
 
         # output
 
-        log.info(f'{nb_conditions} new conditions')
+        log.info(f'{nb_objectives} new objectives')
