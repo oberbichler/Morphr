@@ -46,8 +46,8 @@ class PointNodeCoupling(eq.Objective):
 
         delta = target - location
 
-        p = np.dot(delta, delta) * self.weight / 2
+        p = np.dot(delta, delta) * self.weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        g[:] = p.g / 2
+        h[:] = p.h / 2
+        return p.f / 2
