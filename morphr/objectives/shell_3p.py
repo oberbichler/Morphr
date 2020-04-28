@@ -50,7 +50,7 @@ class Shell3P(eq.Objective):
         A3 = A3 / dA
 
         ref_a = np.array([A11, A22, A12])
-        ref_b = np.dot([A1_1, A2_2, A1_2], A3)
+        ref_b = np.dot([A1_1, A1_2, A2_2], A3)
 
         e1 = A1 / np.linalg.norm(A1)
         e2 = A2 - np.dot(A2, e1) * e1
@@ -94,7 +94,7 @@ class Shell3P(eq.Objective):
             act_b = np.dot([a1_1, a1_2, a2_2], a3)
 
             eps = np.dot(tm, act_a - ref_a) / 2
-            kap = np.dot(tm, ref_b - act_b)
+            kap = np.dot(tm, act_b - ref_b)
 
             p += (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * weight
 
