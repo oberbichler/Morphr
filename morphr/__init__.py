@@ -1,5 +1,6 @@
 from morphr.configuration import Configuration, DebugData, Job, Task
 
+from morphr.objectives.membrane_3p import Membrane3P
 from morphr.objectives.normal_distance import NormalDistance
 from morphr.objectives.point_distance import PointDistance
 from morphr.objectives.point_location import PointLocation
@@ -31,6 +32,7 @@ __all__ = [
     'Logger',
     'Task',
     # objectives
+    'Membrane3P',
     'NormalDistance',
     'PointDistance',
     'PointLocation',
