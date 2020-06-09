@@ -18,7 +18,13 @@ class SolveNonlinear(Task):
         for _, group_elements, _ in element_groups:
             elements.extend(group_elements)
 
-        problem = eq.Problem(elements, nb_threads=self.nb_threads)
+        start_time = time.perf_counter()
+
+        problem = eq.Problem(elements, nb_threads=self.nb_threads, grainsize=100)
+
+        end_time = time.perf_counter()
+        time_ellapsed = end_time - start_time
+        log.benchmark(f'Assembly done in {time_ellapsed:.2f} sec')
 
         log.info(f'{len(elements)} objectives')
         log.info(f'{problem.nb_variables} variables')
