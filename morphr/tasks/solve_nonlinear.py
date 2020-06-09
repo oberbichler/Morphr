@@ -61,6 +61,10 @@ class SolveNonlinear(Task):
 
         scaling_factors = np.empty(len(element_groups), float)
 
+        log.info(f'Problem consists of {len(element_groups)} groups')
+        for i, group in enumerate(element_groups):
+            log.info(f'  {i}: {group[0]} with {len(group[1])} elements')
+
         for iteration in range(self.max_iterations):
             log.info(f'Iteration {iteration+1}/{self.max_iterations}...')
 
