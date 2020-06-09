@@ -8,6 +8,7 @@ POINT_LOCATION = mo.PointLocation
 
 
 class ApplyMeshDisplacement(mo.Task):
+    max_distance: float = 0
     weight: float = 1
 
     def line_projection(self, point, a, b):
@@ -38,6 +39,7 @@ class ApplyMeshDisplacement(mo.Task):
         displacements = data.get('displacements', None)
         faces = data.get('faces', None)
         model_tolerance = job.model_tolerance
+        max_distance = model_tolerance * 2 if self.max_distance <= 0 else self.max_distance
 
         nb_objectives = 0
 
@@ -82,7 +84,7 @@ class ApplyMeshDisplacement(mo.Task):
                 if self.debug:
                     cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
-                indices = rtree.by_point(location, model_tolerance * 2)
+                indices = rtree.by_point(location, max_distance)
 
                 min_distance2 = float('inf')
                 min_location = None
