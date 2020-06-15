@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_NODE_COUPLING = mo.PointNodeCoupling
+POINT_NODE_COUPLING = mo.IgaPointNodeCouplingAD
 
 
 class ApplyAlphaRegularization(mo.Task):

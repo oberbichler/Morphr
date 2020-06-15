@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-ELEMENT = eq.IgaShell3PAD
+SHELL_3P = mo.IgaShell3PAD
 
 
 class ApplyShell3P(mo.Task):
@@ -55,7 +55,7 @@ class ApplyShell3P(mo.Task):
                     nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('Shell3P', elements, self.weight))
+        data['elements'].append(('IgaShell3PAD', elements, self.weight))
 
         # output
 

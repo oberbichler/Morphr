@@ -1,4 +1,4 @@
-from morphr.objectives.point_distance import PointDistance
+from morphr import IgaPointDistanceAD
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -43,7 +43,7 @@ def element():
 
     weight = DATA['weight']
 
-    element = PointDistance(nodes_a, nodes_b)
+    element = IgaPointDistanceAD(nodes_a, nodes_b)
     element.add(shape_functions_a, shape_functions_b, weight)
 
     return element

@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_LOCATION = mo.PointLocation
+POINT_LOCATION = mo.IgaPointLocationAD
 
 
 class ApplyMeshDisplacement(mo.Task):

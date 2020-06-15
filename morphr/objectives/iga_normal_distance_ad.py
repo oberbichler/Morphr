@@ -4,7 +4,7 @@ import hyperjet as hj
 from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
 
 
-class NormalDistance(eq.Objective):
+class IgaNormalDistanceAD(eq.Objective):
     def __init__(self, nodes_a, nodes_b):
         eq.Objective.__init__(self)
         self.nodes_a = np.asarray(nodes_a, object)

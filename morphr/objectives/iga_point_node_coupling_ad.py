@@ -4,7 +4,7 @@ import hyperjet as hj
 from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_2
 
 
-class PointNodeCoupling(eq.Objective):
+class IgaPointNodeCouplingAD(eq.Objective):
     def __init__(self, nodes, shape_functions, target_node, weight):
         eq.Objective.__init__(self)
 

@@ -111,7 +111,7 @@ class ApplyEdgeCoupling(mo.Task):
             data['elements'].append(('DisplacementCoupling', point_distance_group, weight_displacement))
 
         if weight_rotation != 0:
-            data['elements'].append(('RotationCoupling', normal_distance_group, weight_rotation))
+            data['elements'].append(('IgaRotationCouplingAD', normal_distance_group, weight_rotation))
 
         # output
 
