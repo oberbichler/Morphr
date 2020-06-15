@@ -3,7 +3,7 @@ import numpy as np
 from morphr.objectives.utility import evaluate_ref, evaluate_act_geometry_hj, normalized
 
 
-class Membrane3P(eq.Objective):
+class IgaMembrane3PAD(eq.Objective):
     def __init__(self, nodes, thickness, youngs_modulus, poissons_ratio, prestress=None):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)

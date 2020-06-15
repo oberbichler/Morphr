@@ -1,5 +1,6 @@
 from morphr.configuration import Configuration, DebugData, Job, Task
 
+from morphr.objectives.iga_membrane_3p_ad import IgaMembrane3PAD
 from morphr.objectives.iga_normal_distance_ad import IgaNormalDistanceAD
 from morphr.objectives.iga_point_distance_ad import IgaPointDistanceAD
 from morphr.objectives.iga_point_location_ad import IgaPointLocationAD

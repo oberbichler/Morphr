@@ -6,8 +6,8 @@ import numpy as np
 
 from typing import Dict, Union
 
-POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.RotationCoupling
+POINT_DISTANCE = mo.IgaPointDistanceAD
+NORMAL_DISTANCE = mo.IgaRotationCouplingAD
 
 
 class ApplyEdgeCoupling(mo.Task):
