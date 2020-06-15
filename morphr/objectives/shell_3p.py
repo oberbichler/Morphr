@@ -1,5 +1,6 @@
 import eqlib as eq
 import numpy as np
+import hyperjet as hj
 from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj, normalized
 
 
@@ -75,15 +76,23 @@ class Shell3P(eq.Objective):
         self.data.append((shape_functions, ref_a, ref_b, tm, weight))
 
     def compute(self, g, h):
-        p = 0
+        f = 0
 
         for shape_functions, ref_a, ref_b, tm, weight in self.data:
-            act_a1 = evaluate_act_geometry_hj(self.nodes, shape_functions[1])
-            act_a2 = evaluate_act_geometry_hj(self.nodes, shape_functions[2])
+            act_a1 = evaluate_act(self.nodes, shape_functions[1])
+            act_a2 = evaluate_act(self.nodes, shape_functions[2])
 
-            act_a1_1 = evaluate_act_geometry_hj(self.nodes, shape_functions[3])
-            act_a1_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[4])
-            act_a2_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[5])
+            act_a1_1 = evaluate_act(self.nodes, shape_functions[3])
+            act_a1_2 = evaluate_act(self.nodes, shape_functions[4])
+            act_a2_2 = evaluate_act(self.nodes, shape_functions[5])
+
+            variables = hj.HyperJet.variables([*act_a1, *act_a2, *act_a1_1, *act_a1_2, *act_a2_2])
+
+            act_a1 = np.array(variables[0:3])
+            act_a2 = np.array(variables[3:6])
+            act_a1_1 = np.array(variables[6:9])
+            act_a1_2 = np.array(variables[9:12])
+            act_a2_2 = np.array(variables[12:15])
 
             act_a3 = np.cross(act_a1, act_a2)
             act_a3 /= np.linalg.norm(act_a3)
@@ -94,8 +103,37 @@ class Shell3P(eq.Objective):
             eps = np.dot(tm, act_a - ref_a) / 2
             kap = np.dot(tm, act_b - ref_b)
 
-            p += (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * weight
+            p = (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * weight / 2
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+            f += p.f
+
+            dofs_per_node = 3
+
+            g.fill(0)
+
+            for r in range(self.nb_variables):
+                ri = r // dofs_per_node
+                rd = r % dofs_per_node
+
+                for k in range(5):
+                    g[r] += p.g[k * dofs_per_node + rd] * shape_functions[k + 1, ri]
+
+            h.fill(0)
+
+            for r in range(self.nb_variables):
+                ai = r // dofs_per_node
+                ad = r % dofs_per_node
+
+                for s in range(self.nb_variables):
+                    bi = s // dofs_per_node
+                    bd = s % dofs_per_node
+
+                    for i in range(5):
+                        a = i + 1
+
+                        for j in range(5):
+                            b = j + 1
+
+                            h[r, s] += p.h[i * dofs_per_node + ad, j * dofs_per_node + bd] * shape_functions[a, ai] * shape_functions[b, bi]
+
+        return f
