@@ -3,7 +3,7 @@ import numpy as np
 from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
 
-class PointLocation(eq.Objective):
+class IgaPointLocationAD(eq.Objective):
     def __init__(self, nodes):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)

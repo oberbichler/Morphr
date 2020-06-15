@@ -4,10 +4,10 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-SHELL_3P = mo.IgaShell3PAD
+ELEMENT = mo.Membrane3P
 
 
-class ApplyShell3P(mo.Task):
+class ApplyMembrane3P(mo.Task):
     thickness: float
     youngs_modulus: float
     poissons_ratio: float
@@ -41,14 +41,18 @@ class ApplyShell3P(mo.Task):
             else:
                 nodes = data['nodes'][surface_geometry_key]
 
-            for u, v, weight in an.integration_points(face, model_tolerance):
-                nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
+            for span_u, span_v, integration_points in an.integration_points_with_spans(face, model_tolerance):
+                nonzero_indices = surface_geometry.nonzero_pole_indices_at_span(span_u, span_v)
 
-                element = SHELL_3P(nodes[nonzero_indices], thickness, youngs_modulus, poissons_ratio)
-                element.add(shape_functions, weight)
+                element = ELEMENT(nodes[nonzero_indices], thickness, youngs_modulus, poissons_ratio)
                 elements.append(element)
 
-                nb_objectives += 1
+                for u, v, weight in integration_points:
+                    _, shape_functions = surface_geometry.shape_functions_at(u, v, 1)
+
+                    element.add(shape_functions, weight)
+
+                    nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
         data['elements'].append(('IgaShell3PAD', elements, self.weight))

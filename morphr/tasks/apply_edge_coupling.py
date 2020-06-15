@@ -6,8 +6,8 @@ import numpy as np
 
 from typing import Dict, Union
 
-POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.RotationCoupling  # mo.RotationCoupling  # mo.NormalDistance
+POINT_DISTANCE = mo.IgaPointDistanceAD
+NORMAL_DISTANCE = mo.IgaRotationCouplingAD  # mo.IgaRotationCouplingAD  # mo.IgaNormalDistanceAD
 
 
 class ApplyEdgeCoupling(mo.Task):
@@ -112,7 +112,7 @@ class ApplyEdgeCoupling(mo.Task):
             data['elements'].append(('DisplacementCoupling', point_distance_group, weight_displacement))
 
         if weight_rotation != 0:
-            data['elements'].append(('RotationCoupling', normal_distance_group, weight_rotation))
+            data['elements'].append(('IgaRotationCouplingAD', normal_distance_group, weight_rotation))
 
         # output
 

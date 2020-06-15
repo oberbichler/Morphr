@@ -4,10 +4,10 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-REDUCED_SHELL_3P = mo.ReducedShell3P
+REDUCED_SHELL_3P = mo.ReducedIgaShell
 
 
-class ApplyReducedShell3P(mo.Task):
+class ApplyReducedShell(mo.Task):
     membrane_stiffness: float
     bending_stiffness: float
     weight: float = 1
@@ -47,7 +47,7 @@ class ApplyReducedShell3P(mo.Task):
                 nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('ReducedShell3P', elements, self.weight))
+        data['elements'].append(('ReducedIgaShell', elements, self.weight))
 
         # output
 
