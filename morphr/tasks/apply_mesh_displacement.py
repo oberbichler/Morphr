@@ -106,6 +106,7 @@ class ApplyMeshDisplacement(mo.Task):
 
                         if np.min(parameter) < 0 or np.max(parameter) > 1:
                             continue
+
                         d = closest_point - location
                         distance2 = d.dot(d)
 
