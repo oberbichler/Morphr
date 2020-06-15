@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-ELEMENT = mo.Membrane3P
+ELEMENT = mo.IgaMembrane3PAD
 
 
 class ApplyMembrane3P(mo.Task):
@@ -55,7 +55,7 @@ class ApplyMembrane3P(mo.Task):
                     nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('IgaShell3PAD', elements, self.weight))
+        data['elements'].append(('Shell3P', elements, self.weight))
 
         # output
 

@@ -7,7 +7,7 @@ import numpy as np
 from typing import Dict, Union
 
 POINT_DISTANCE = mo.IgaPointDistanceAD
-NORMAL_DISTANCE = mo.IgaRotationCouplingAD  # mo.IgaRotationCouplingAD  # mo.IgaNormalDistanceAD
+NORMAL_DISTANCE = mo.IgaRotationCouplingAD
 
 
 class ApplyEdgeCoupling(mo.Task):
@@ -86,10 +86,9 @@ class ApplyEdgeCoupling(mo.Task):
 
                 if weight_rotation != 0:
                     _, axis = trim_a.curve_3d.derivatives_at(t_a, order=1)
-                    axis /= np.linalg.norm(axis)
 
                     element = NORMAL_DISTANCE(element_nodes_a, element_nodes_b)
-                    element.add(shape_functions_a, shape_functions_b, axis=axis, weight=weight * weight_rotation)
+                    element.add(shape_functions_a, shape_functions_b, axis, weight=weight * weight_rotation)
                     normal_distance_group.append(element)
 
                     nb_objectives += 1

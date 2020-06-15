@@ -1,5 +1,6 @@
 from morphr.configuration import Configuration, DebugData, Job, Task
 
+from morphr.objectives.iga_membrane_3p_ad import IgaMembrane3PAD
 from morphr.objectives.iga_normal_distance_ad import IgaNormalDistanceAD
 from morphr.objectives.iga_point_distance_ad import IgaPointDistanceAD
 from morphr.objectives.iga_point_location_ad import IgaPointLocationAD
@@ -12,6 +13,7 @@ from morphr.logging import Logger
 
 from morphr.tasks.apply_alpha_regularization import ApplyAlphaRegularization
 from morphr.tasks.apply_edge_coupling import ApplyEdgeCoupling
+from morphr.tasks.apply_membrane_3p import ApplyMembrane3P
 from morphr.tasks.apply_mesh_displacement import ApplyMeshDisplacement
 from morphr.tasks.apply_reduced_shell import ApplyReducedShell
 from morphr.tasks.apply_shell_3p import ApplyShell3P
@@ -41,6 +43,7 @@ __all__ = [
     # tasks
     'ApplyAlphaRegularization',
     'ApplyEdgeCoupling',
+    'ApplyMembrane3P',
     'ApplyMeshDisplacement',
     'ApplyReducedShell',
     'ApplyShell3P',
