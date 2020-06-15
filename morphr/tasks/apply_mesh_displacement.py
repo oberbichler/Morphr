@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_LOCATION = mo.PointLocation
+POINT_LOCATION = eq.IgaPointLocation
 
 
 class ApplyMeshDisplacement(mo.Task):
@@ -104,21 +104,21 @@ class ApplyMeshDisplacement(mo.Task):
 
                         closest_point, parameter = an.Triangle3D.projection(location, va, vb, vc)
 
-                        if np.min(parameter) < 0 or np.max(parameter) > 1:
-                            cp_ab, t_ab = self.line_projection(location, va, vb)
-                            cp_bc, t_bc = self.line_projection(location, vb, vc)
-                            cp_ca, t_ca = self.line_projection(location, vc, va)
+                        # if np.min(parameter) < 0 or np.max(parameter) > 1:
+                        #     cp_ab, t_ab = self.line_projection(location, va, vb)
+                        #     cp_bc, t_bc = self.line_projection(location, vb, vc)
+                        #     cp_ca, t_ca = self.line_projection(location, vc, va)
 
-                            d = np.linalg.norm(cp_ab - location)
-                            closest_point = cp_ab
+                        #     d = np.linalg.norm(cp_ab - location)
+                        #     closest_point = cp_ab
 
-                            if np.linalg.norm(cp_bc - location) < d:
-                                d = np.linalg.norm(cp_bc - location)
-                                closest_point = cp_bc
+                        #     if np.linalg.norm(cp_bc - location) < d:
+                        #         d = np.linalg.norm(cp_bc - location)
+                        #         closest_point = cp_bc
 
-                            if np.linalg.norm(cp_ca - location) < d:
-                                d = np.linalg.norm(cp_ca - location)
-                                closest_point = cp_ca
+                        #     if np.linalg.norm(cp_ca - location) < d:
+                        #         d = np.linalg.norm(cp_ca - location)
+                        #         closest_point = cp_ca
 
                         d = closest_point - location
                         distance2 = d.dot(d)

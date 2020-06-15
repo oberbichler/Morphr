@@ -1,5 +1,6 @@
 import eqlib as eq
 import numpy as np
+import hyperjet as hj
 from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b, normalized
 
 
@@ -25,27 +26,65 @@ class NormalDistance(eq.Objective):
         self.data.append((shape_functions_a, shape_functions_b, target, weight))
 
     def compute(self, g, h):
-        p = 0
+        f = 0
 
         for shape_functions_a, shape_functions_b, target, weight in self.data:
-            a1_a = evaluate_act_geometry_hj_a(self.nodes_a, shape_functions_a[1], self.nb_variables)
-            a2_a = evaluate_act_geometry_hj_a(self.nodes_a, shape_functions_a[2], self.nb_variables)
+            a1_a = evaluate_act(self.nodes_a, shape_functions_a[1])
+            a2_a = evaluate_act(self.nodes_a, shape_functions_a[2])
+
+            a1_b = evaluate_act(self.nodes_b, shape_functions_b[1])
+            a2_b = evaluate_act(self.nodes_b, shape_functions_b[2])
+
+            variables = hj.HyperJet.variables([*a1_a, *a2_a, *a1_b, *a2_b])
+
+            a1_a = np.array(variables[0:3])
+            a2_a = np.array(variables[3:6])
+            a1_b = np.array(variables[6:9])
+            a2_b = np.array(variables[9:12])
 
             a3_a = normalized(np.cross(a1_a, a2_a))
-
-            a1_b = evaluate_act_geometry_hj_b(self.nodes_b, shape_functions_b[1], self.nb_variables)
-            a2_b = evaluate_act_geometry_hj_b(self.nodes_b, shape_functions_b[2], self.nb_variables)
-
             a3_b = normalized(np.cross(a1_b, a2_b))
 
-            if target == 0:
-                delta = a3_a - a3_b
-                p += np.dot(delta, delta) * weight
-            else:
-                angle = np.arccos(np.dot(a3_a, a3_b))
-                p += (angle - target)**2 * weight
-                # p += (np.linalg.norm(delta) - target)**2 * weight
+            delta = a3_a - a3_b
+            p = np.dot(delta, delta) * weight / 2
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+            f += p.f
+
+            a = len(shape_functions_a[0]) * 3
+            b = len(shape_functions_b[0]) * 3
+
+            for r in range(a):
+                g[0 + r]  = p.g[0 + r % 3] * shape_functions_a[1, r // 3]
+                g[0 + r] += p.g[3 + r % 3] * shape_functions_a[2, r // 3]
+
+            for r in range(b):
+                g[a + r]  = p.g[6 + r % 3] * shape_functions_b[1, r // 3]
+                g[a + r] += p.g[9 + r % 3] * shape_functions_b[2, r // 3]
+
+            for r in range(a):
+                for s in range(a):
+                    h[0 + r, 0 + s]  = p.h[0 + r % 3, 0 + s % 3] * shape_functions_a[1, r // 3] * shape_functions_a[1, s // 3]
+                    h[0 + r, 0 + s] += p.h[3 + r % 3, 0 + s % 3] * shape_functions_a[2, r // 3] * shape_functions_a[1, s // 3]
+                    h[0 + r, 0 + s] += p.h[0 + r % 3, 3 + s % 3] * shape_functions_a[1, r // 3] * shape_functions_a[2, s // 3]
+                    h[0 + r, 0 + s] += p.h[3 + r % 3, 3 + s % 3] * shape_functions_a[2, r // 3] * shape_functions_a[2, s // 3]
+
+                for s in range(b):
+                    h[0 + r, a + s]  = p.h[0 + r % 3, 6 + s % 3] * shape_functions_a[1, r // 3] * shape_functions_b[1, s // 3]
+                    h[0 + r, a + s] += p.h[3 + r % 3, 6 + s % 3] * shape_functions_a[2, r // 3] * shape_functions_b[1, s // 3]
+                    h[0 + r, a + s] += p.h[0 + r % 3, 9 + s % 3] * shape_functions_a[1, r // 3] * shape_functions_b[2, s // 3]
+                    h[0 + r, a + s] += p.h[3 + r % 3, 9 + s % 3] * shape_functions_a[2, r // 3] * shape_functions_b[2, s // 3]
+
+            for r in range(b):
+                for s in range(a):
+                    h[a + r, 0 + s]  = p.h[6 + r % 3, 0 + s % 3] * shape_functions_b[1, r // 3] * shape_functions_a[1, s // 3]
+                    h[a + r, 0 + s] += p.h[9 + r % 3, 0 + s % 3] * shape_functions_b[2, r // 3] * shape_functions_a[1, s // 3]
+                    h[a + r, 0 + s] += p.h[6 + r % 3, 3 + s % 3] * shape_functions_b[1, r // 3] * shape_functions_a[2, s // 3]
+                    h[a + r, 0 + s] += p.h[9 + r % 3, 3 + s % 3] * shape_functions_b[2, r // 3] * shape_functions_a[2, s // 3]
+
+                for s in range(b):
+                    h[a + r, a + s]  = p.h[6 + r % 3, 6 + s % 3] * shape_functions_b[1, r // 3] * shape_functions_b[1, s // 3]
+                    h[a + r, a + s] += p.h[9 + r % 3, 6 + s % 3] * shape_functions_b[2, r // 3] * shape_functions_b[1, s // 3]
+                    h[a + r, a + s] += p.h[6 + r % 3, 9 + s % 3] * shape_functions_b[1, r // 3] * shape_functions_b[2, s // 3]
+                    h[a + r, a + s] += p.h[9 + r % 3, 9 + s % 3] * shape_functions_b[2, r // 3] * shape_functions_b[2, s // 3]
+
+        return f

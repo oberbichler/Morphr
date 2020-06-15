@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-ELEMENT = mo.Membrane3P
+ELEMENT = eq.IgaMembrane3PAD
 
 
 class ApplyMembrane3P(mo.Task):

@@ -20,6 +20,8 @@ class SolveNonlinear(Task):
 
         start_time = time.perf_counter()
 
+        eq.Log.info_level = 10
+
         problem = eq.Problem(elements, nb_threads=self.nb_threads, grainsize=100)
 
         end_time = time.perf_counter()
