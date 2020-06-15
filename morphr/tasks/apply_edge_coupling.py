@@ -7,7 +7,7 @@ import numpy as np
 from typing import Dict, Union
 
 POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.RotationCoupling  # mo.RotationCoupling  # mo.NormalDistance
+NORMAL_DISTANCE = mo.RotationCoupling
 
 
 class ApplyEdgeCoupling(mo.Task):
