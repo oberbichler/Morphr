@@ -149,4 +149,4 @@ class ApplyMeshDisplacement(mo.Task):
 
         # output
 
-        log.info(f'{len(elements)} with {nb_objectives} new objectives')
+        log.info(f'{len(elements)} elements with {nb_objectives} new objectives')
