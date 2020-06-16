@@ -6,8 +6,8 @@ import numpy as np
 
 from typing import Dict, Union
 
-POINT_DISTANCE = mo.IgaPointDistanceAD
-NORMAL_DISTANCE = mo.IgaRotationCouplingAD
+POINT_DISTANCE = eq.IgaPointDistanceAD
+NORMAL_DISTANCE = eq.IgaRotationCouplingAD
 
 
 class ApplyEdgeCoupling(mo.Task):
@@ -115,4 +115,4 @@ class ApplyEdgeCoupling(mo.Task):
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        log.info(f'{len(point_distance_group) + len(normal_distance_group)} with {nb_objectives} new objectives')

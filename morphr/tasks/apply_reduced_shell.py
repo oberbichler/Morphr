@@ -51,4 +51,4 @@ class ApplyReducedShell(mo.Task):
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        log.info(f'{len(elements)} with {nb_objectives} new objectives')
