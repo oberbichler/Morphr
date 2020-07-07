@@ -29,7 +29,7 @@ setup(
         'anurbs==0.11',
         'colorama',
         'click',
-        'eqlib==0.37',
+        'eqlib==0.36',
         'hyperjet==0.35',
         'meshio',
         'numpy',
