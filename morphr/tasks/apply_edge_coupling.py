@@ -94,9 +94,6 @@ class ApplyEdgeCoupling(mo.Task):
 
                     nb_objectives += 1
 
-                    if self.debug:
-                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
-
                 if self.debug:
                     point_a = nurbs_surface_a.point_at(u_a, v_a)
                     point_b = nurbs_surface_b.point_at(u_b, v_b)
