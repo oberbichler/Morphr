@@ -1,4 +1,5 @@
 import eqlib as eq
+import hyperjet as hj
 import numpy as np
 from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b
 
@@ -10,7 +11,9 @@ class IgaPointDistanceAD(eq.Objective):
         self.nodes_b = np.asarray(nodes_b, object)
 
         variables = []
-        for node in nodes_a + nodes_b:
+        for node in nodes_a:
+            variables += [node.x, node.y, node.z]
+        for node in nodes_b:
             variables += [node.x, node.y, node.z]
         self.variables = variables
 
@@ -25,24 +28,6 @@ class IgaPointDistanceAD(eq.Objective):
 
         return len(self.data) - 1
 
-    @property
-    def act_a(self):
-        return evaluate_act(self.nodes_a, self.shape_functions_a[0])
-
-    @property
-    def act_b(self):
-        return evaluate_act(self.nodes_b, self.shape_functions_b[0])
-
-    def evaluate_act_a_2(self, index):
-        nb_dofs_a = len(self.nodes_a) * 3
-        nb_dofs_b = len(self.nodes_b) * 3
-        return evaluate_act_2(self.nodes_a, self.shape_functions_a[index], nb_dofs_a + nb_dofs_b, 0)
-
-    def evaluate_act_b_2(self, index):
-        nb_dofs_a = len(self.nodes_a) * 3
-        nb_dofs_b = len(self.nodes_b) * 3
-        return evaluate_act_2(self.nodes_b, self.shape_functions_b[index], nb_dofs_a + nb_dofs_b, nb_dofs_a)
-
     def compute(self, g, h):
         p = 0
 
@@ -52,8 +37,6 @@ class IgaPointDistanceAD(eq.Objective):
 
             delta = x_b - x_a
 
-            p += np.dot(delta, delta) * weight
+            p += weight * np.dot(delta, delta)
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+        return hj.explode(0.5 * p, g, h)

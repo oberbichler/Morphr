@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-SHELL_3P = mo.IgaShell3PAD
+ELEMENT = eq.IgaShell3PAD
 
 
 class ApplyShell3P(mo.Task):

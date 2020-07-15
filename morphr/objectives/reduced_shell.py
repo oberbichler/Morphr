@@ -36,6 +36,4 @@ class ReducedIgaShell(eq.Objective):
 
             p += (e_m * self.membrane_stiffness + e_b * self.bending_stiffness) * weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        return hj.explode(p, g, h)

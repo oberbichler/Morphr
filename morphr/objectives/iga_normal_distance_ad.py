@@ -11,7 +11,9 @@ class IgaNormalDistanceAD(eq.Objective):
         self.nodes_b = np.asarray(nodes_b, object)
 
         variables = []
-        for node in nodes_a + nodes_b:
+        for node in nodes_a:
+            variables += [node.x, node.y, node.z]
+        for node in nodes_b:
             variables += [node.x, node.y, node.z]
         self.variables = variables
 

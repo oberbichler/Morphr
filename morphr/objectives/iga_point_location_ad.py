@@ -1,4 +1,5 @@
 import eqlib as eq
+import hyperjet as hj
 import numpy as np
 from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj
 
@@ -38,8 +39,6 @@ class IgaPointLocationAD(eq.Objective):
 
             delta = target - act_x
 
-            p += np.dot(delta, delta) * weight
+            p += weight * np.dot(delta, delta)
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+        return hj.explode(0.5 * p, g, h)
