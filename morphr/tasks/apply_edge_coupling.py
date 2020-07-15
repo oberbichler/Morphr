@@ -49,7 +49,7 @@ class ApplyEdgeCoupling(mo.Task):
 
                 nurbs_surface_nodes_a = np.array(nurbs_surface_nodes, object)
 
-                nodes[nurbs_surface_a] = nurbs_surface_nodes
+                nodes[nurbs_surface_a] = nurbs_surface_nodes_a
             else:
                 nurbs_surface_nodes_a = nodes[nurbs_surface_a]
 
@@ -61,7 +61,7 @@ class ApplyEdgeCoupling(mo.Task):
 
                 nurbs_surface_nodes_b = np.array(nurbs_surface_nodes, object)
 
-                nodes[nurbs_surface_b] = nurbs_surface_nodes
+                nodes[nurbs_surface_b] = nurbs_surface_nodes_b
             else:
                 nurbs_surface_nodes_b = nodes[nurbs_surface_b]
 
