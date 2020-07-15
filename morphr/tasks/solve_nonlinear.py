@@ -117,6 +117,9 @@ class SolveNonlinear(Task):
             problem.df[:] = g
             problem.hm_values[:] = h
 
+            if np.linalg.norm(problem.df) < self.r_tolerance:
+                break
+
             if self.damping != 0:
                 problem.hm_add_diagonal(self.damping)
 
