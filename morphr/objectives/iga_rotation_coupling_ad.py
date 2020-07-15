@@ -36,26 +36,6 @@ class IgaRotationCouplingAD(eq.Objective):
 
         self.data.append((shape_functions_a, shape_functions_b, ref_a3_a, ref_a3_b, axis, weight))
 
-    @property
-    def act_a(self):
-        return evaluate_act(self.nodes_a, self.shape_functions_a[0])
-
-    @property
-    def act_b(self):
-        return evaluate_act(self.nodes_b, self.shape_functions_b[0])
-
-    def evaluate_ref_a(self, index):
-        return evaluate_ref(self.nodes_a, self.shape_functions_a[index])
-
-    def evaluate_ref_b(self, index):
-        return evaluate_ref(self.nodes_b, self.shape_functions_b[index])
-
-    def evaluate_act_a(self, index):
-        return evaluate_act(self.nodes_a, self.shape_functions_a[index])
-
-    def evaluate_act_b(self, index):
-        return evaluate_act(self.nodes_b, self.shape_functions_b[index])
-
     def compute(self, g, h):
         p = 0
 

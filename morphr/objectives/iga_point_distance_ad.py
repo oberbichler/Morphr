@@ -25,24 +25,6 @@ class IgaPointDistanceAD(eq.Objective):
 
         return len(self.data) - 1
 
-    @property
-    def act_a(self):
-        return evaluate_act(self.nodes_a, self.shape_functions_a[0])
-
-    @property
-    def act_b(self):
-        return evaluate_act(self.nodes_b, self.shape_functions_b[0])
-
-    def evaluate_act_a_2(self, index):
-        nb_dofs_a = len(self.nodes_a) * 3
-        nb_dofs_b = len(self.nodes_b) * 3
-        return evaluate_act_2(self.nodes_a, self.shape_functions_a[index], nb_dofs_a + nb_dofs_b, 0)
-
-    def evaluate_act_b_2(self, index):
-        nb_dofs_a = len(self.nodes_a) * 3
-        nb_dofs_b = len(self.nodes_b) * 3
-        return evaluate_act_2(self.nodes_b, self.shape_functions_b[index], nb_dofs_a + nb_dofs_b, nb_dofs_a)
-
     def compute(self, g, h):
         p = 0
 
