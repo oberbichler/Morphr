@@ -5,6 +5,7 @@ import time
 
 
 class SolveNonlinear(Task):
+    r_tolerance: float = 1e-6
     max_iterations: int = 100
     damping: float = 0
     auto_scale: bool = False
@@ -43,6 +44,9 @@ class SolveNonlinear(Task):
             log.info(f'Iteration {i+1}/{self.max_iterations}...')
 
             problem.compute()
+
+            if np.linalg.norm(problem.df) < self.r_tolerance:
+                break
 
             if self.damping != 0:
                 problem.hm_add_diagonal(self.damping)
