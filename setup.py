@@ -26,11 +26,11 @@ setup(
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@tum.de',
     install_requires=[
-        'anurbs==0.11',
+        'anurbs==0.12.0',
         'colorama==0.4.3',
         'click==7.1.2',
         'eqlib==0.37.1',
-        'hyperjet==0.35',
+        'hyperjet==0.35.0',
         'meshio==4.0.16',
         'numpy==1.19.0',
         'pydantic==1.5.1',
