@@ -10,4 +10,6 @@ class ExportIbra(Task):
         if model is None:
             raise RuntimeError('No CAD model available')
 
+        log.info(f'Write "{self.path}"...')
+
         model.save(self.path)
