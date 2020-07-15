@@ -4,34 +4,103 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_LOCATION = mo.IgaPointLocationAD
+ELEMENT = eq.IgaPointLocation
+
+
+def squared_distance(v):
+    return np.dot(v, v)
+
+
+def line_projection(point, a, b):
+    dif = b - a
+    dot = np.dot(dif, dif)
+
+    if dot < 1e-14:
+        return a, 0.0
+
+    o = a
+    r = dif / dot
+    o2pt = point - o
+    t = np.dot(o2pt, r)
+
+    if t < 0:
+        return a, 0.0
+
+    if t > 1:
+        return b, 1.0
+
+    closest_point = o + dif * t
+
+    return closest_point, t
+
+
+class MeshMapper:
+    def __init__(self, vertices, faces, max_distance):
+        self.vertices = np.asarray(vertices, float)
+        self.faces = np.asarray(faces, int)
+        self.max_distance_squared = float(max_distance)**2
+
+        rtree = an.RTree3D(len(faces))
+
+        for face in faces:
+            face_vertices = vertices[face]
+
+            box_min = np.min(face_vertices, axis=0)
+            box_max = np.max(face_vertices, axis=0)
+
+            rtree.add(box_min, box_max)
+
+        rtree.finish()
+
+        self.rtree = rtree
+
+    def closest_point(self, sample):
+        min_distance_squared = float('inf')
+        min_location = None
+        min_mesh_parameter = (None, None)
+
+        for face_index in self.rtree.by_point(sample, self.max_distance_squared**0.5):
+            face = self.faces[face_index]
+
+            a, b, c = np.take(self.vertices, face, axis=0)
+
+            closest_point, closest_parameter = an.Triangle3D.projection(sample, a, b, c)
+
+            if np.min(closest_parameter) < 0 or np.max(closest_parameter) > 1:
+                closest_point_ab, closest_parameter_ab = line_projection(sample, a, b)
+                closest_point_bc, closest_parameter_bc = line_projection(sample, b, c)
+                closest_point_ca, closest_parameter_ca = line_projection(sample, c, a)
+
+                distance_squared = squared_distance(closest_point_ab - sample)
+                closest_point = closest_point_ab
+                closest_parameter = [closest_parameter_ab, 1 - closest_parameter_ab, 0]
+
+                if squared_distance(closest_point_bc - sample) < distance_squared:
+                    distance_squared = squared_distance(closest_point_bc - sample)
+                    closest_point = closest_point_bc
+                    closest_parameter = [0, closest_parameter_bc, 1 - closest_parameter_bc]
+
+                if squared_distance(closest_point_ca - sample) < distance_squared:
+                    distance_squared = squared_distance(closest_point_ca - sample)
+                    closest_point = closest_point_ca
+                    closest_parameter = [0, 1 - closest_parameter_ca, closest_parameter_ca]
+            else:
+                d = np.subtract(closest_point, sample)
+                distance_squared = d.dot(d)
+
+            if distance_squared > self.max_distance_squared or distance_squared > min_distance_squared:
+                continue
+
+            min_distance_squared = distance_squared
+            min_location = closest_point
+            min_mesh_parameter = (face_index, closest_parameter)
+
+        return min_location, min_mesh_parameter
 
 
 class ApplyMeshDisplacement(mo.Task):
     max_distance: float = 0
     weight: float = 1
-
-    def line_projection(self, point, a, b):
-        dif = b - a
-        dot = np.dot(dif, dif)
-
-        if dot < 1e-14:
-            return a, 0.0
-
-        o = a
-        r = dif / dot
-        o2pt = point - o
-        t = np.dot(o2pt, r)
-
-        if t < 0:
-            return a, 0.0
-
-        if t > 1:
-            return b, 1.0
-
-        closest_point = o + dif * t
-
-        return closest_point, t
 
     def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
@@ -48,22 +117,11 @@ class ApplyMeshDisplacement(mo.Task):
         data['nodes'] = data.get('nodes', {})
         elements = []
 
-        rtree = an.RTree3D(len(faces))
+        mapper = MeshMapper(vertices, faces, max_distance)
 
-        for face in faces:
-            vabc = vertices[face]
+        projection_failed = 0        
 
-            box_min = np.min(vabc, axis=0)
-            box_max = np.max(vabc, axis=0)
-
-            if self.debug:
-                cad_model.add(an.Box3D(box_min, box_max), r'{"layer": "Debug/ApplyMeshDisplacement/Boxes"}')
-
-            rtree.add(box_min, box_max)
-
-        rtree.finish()
-
-        for key, face in cad_model.of_type('BrepFace'):
+        for i, (key, face) in enumerate(cad_model.of_type('BrepFace')):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
 
             if surface_geometry_key not in data['nodes']:
@@ -81,7 +139,7 @@ class ApplyMeshDisplacement(mo.Task):
             for span_u, span_v, integration_points in an.integration_points_with_spans(face, model_tolerance):
                 nonzero_indices = surface_geometry.nonzero_pole_indices_at_span(span_u, span_v)
 
-                element = POINT_LOCATION(nodes[nonzero_indices])
+                element = ELEMENT(nodes[nonzero_indices])
                 elements.append(element)
 
                 for u, v, weight in integration_points:
@@ -90,46 +148,20 @@ class ApplyMeshDisplacement(mo.Task):
                     if self.debug:
                         cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
 
-                    indices = rtree.by_point(location, max_distance)
-
-                    min_distance2 = float('inf')
-                    min_location = None
-                    min_parameter = None
-                    min_face = None
-
-                    for index in indices:
-                        a, b, c = faces[index]
-
-                        va, vb, vc = vertices[[a, b, c]]
-
-                        closest_point, parameter = an.Triangle3D.projection(location, va, vb, vc)
-
-                        if np.min(parameter) < 0 or np.max(parameter) > 1:
-                            continue
-
-                        d = closest_point - location
-                        distance2 = d.dot(d)
-
-                        if distance2 > min_distance2:
-                            continue
-
-                        min_distance2 = distance2
-                        min_location = closest_point
-                        min_parameter = parameter
-                        min_face = index
+                    min_location, (min_face, min_parameter) = mapper.closest_point(location)
 
                     if min_face is None:
                         cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/Failed"}')
-                        log.warning('Projection failed! Check model_tolerance.')
+                        projection_failed += 1
                         continue
 
                     abc = faces[min_face]
 
                     dabc = displacements[abc]
 
-                    displacement = min_parameter.dot(dabc)
+                    displacement = np.dot(min_parameter, dabc)
 
-                    nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
+                    n, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
 
                     location_source = min_location
                     location_target = min_location + displacement
@@ -148,5 +180,8 @@ class ApplyMeshDisplacement(mo.Task):
         data['elements'].append(('MeshDisplacement', elements, self.weight))
 
         # output
+
+        if projection_failed > 0:
+            log.warning(f'Projection failed for {projection_failed} points')
 
         log.info(f'{len(elements)} elements with {nb_objectives} new objectives')
