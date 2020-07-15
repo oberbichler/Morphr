@@ -1,4 +1,5 @@
 import eqlib as eq
+import hyperjet as hj
 import numpy as np
 from morphr.objectives.utility import evaluate_act, evaluate_act_geometry_hj_a, evaluate_act_geometry_hj_b
 
@@ -36,8 +37,6 @@ class IgaPointDistanceAD(eq.Objective):
 
             delta = x_b - x_a
 
-            p += np.dot(delta, delta) * weight
+            p += weight * np.dot(delta, delta)
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+        return hj.explode(0.5 * p, g, h)

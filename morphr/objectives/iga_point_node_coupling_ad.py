@@ -1,6 +1,6 @@
 import eqlib as eq
-import numpy as np
 import hyperjet as hj
+import numpy as np
 from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_2
 
 
@@ -48,6 +48,4 @@ class IgaPointNodeCouplingAD(eq.Objective):
 
         p = np.dot(delta, delta) * self.weight
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+        return hj.explode(0.5 * p, g, h)
