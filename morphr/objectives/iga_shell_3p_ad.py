@@ -98,7 +98,7 @@ class IgaShell3PAD(eq.Objective):
             act_a3 /= np.linalg.norm(act_a3)
 
             act_a = np.array([np.dot(act_a1, act_a1), np.dot(act_a2, act_a2), np.dot(act_a1, act_a2)])
-            act_b = np.dot([act_a1_1, act_a1_2, act_a2_2], act_a3)
+            act_b = np.dot([act_a1_1, act_a2_2, act_a1_2], act_a3)
 
             eps = np.dot(tm, act_a - ref_a) / 2
             kap = np.dot(tm, act_b - ref_b)
