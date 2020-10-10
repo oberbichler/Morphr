@@ -1,4 +1,4 @@
-from morphr.objectives.rotation_coupling import RotationCoupling
+from morphr import IgaRotationCouplingAD
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -54,7 +54,7 @@ def element():
 
     weight = DATA['weight']
 
-    element = RotationCoupling(nodes_a, nodes_b)
+    element = IgaRotationCouplingAD(nodes_a, nodes_b)
     element.add(shape_functions_a, shape_functions_b, axis, weight)
 
     return element

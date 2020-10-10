@@ -4,13 +4,12 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-ELEMENT = eq.IgaShell3PAD
+REDUCED_SHELL_3P = mo.ReducedIgaShell
 
 
-class ApplyShell3P(mo.Task):
-    thickness: float
-    youngs_modulus: float
-    poissons_ratio: float
+class ApplyReducedShell(mo.Task):
+    membrane_stiffness: float
+    bending_stiffness: float
     weight: float = 1
 
     def run(self, config, job, data, log):
@@ -23,10 +22,6 @@ class ApplyShell3P(mo.Task):
 
         data['nodes'] = data.get('nodes', {})
         elements = []
-
-        thickness = self.thickness
-        youngs_modulus = self.youngs_modulus
-        poissons_ratio = self.poissons_ratio
 
         for key, face in cad_model.of_type('BrepFace'):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
@@ -41,21 +36,18 @@ class ApplyShell3P(mo.Task):
             else:
                 nodes = data['nodes'][surface_geometry_key]
 
-            for span_u, span_v, integration_points in an.integration_points_with_spans(face, model_tolerance):
-                nonzero_indices = surface_geometry.nonzero_pole_indices_at_span(span_u, span_v)
+            for u, v, weight in an.integration_points(face, model_tolerance):
+                nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
 
-                element = ELEMENT(nodes[nonzero_indices], thickness, youngs_modulus, poissons_ratio)
+                element = REDUCED_SHELL_3P(nodes[nonzero_indices], self.membrane_stiffness, self.bending_stiffness)
+                element.add(shape_functions, weight)
+
                 elements.append(element)
 
-                for u, v, weight in integration_points:
-                    _, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
-
-                    element.add(shape_functions, weight)
-
-                    nb_objectives += 1
+                nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('IgaShell3PAD', elements, self.weight))
+        data['elements'].append(('ReducedIgaShell', elements, self.weight))
 
         # output
 

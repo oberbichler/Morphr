@@ -3,7 +3,7 @@ import numpy as np
 from morphr.objectives.utility import evaluate_act_geometry_hj
 
 
-class ReducedShell3P(eq.Objective):
+class ReducedIgaShell(eq.Objective):
     def __init__(self, nodes, membrane_stiffness, bending_stiffness):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)
@@ -36,6 +36,4 @@ class ReducedShell3P(eq.Objective):
 
             p += (e_m * self.membrane_stiffness + e_b * self.bending_stiffness) * weight
 
-        g[:] = p.g
-        h[:] = p.h
-        return p.f
+        return hj.explode(p, g, h)

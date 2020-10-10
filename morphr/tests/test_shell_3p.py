@@ -1,4 +1,4 @@
-from morphr.objectives.shell_3p import Shell3P
+from morphr import IgaShell3PAD
 import pytest
 import eqlib as eq
 import numpy as np
@@ -42,7 +42,7 @@ def element():
 
     weight = DATA['weight']
 
-    element = Shell3P(nodes, 1, 100, 0.0)
+    element = IgaShell3PAD(nodes, 1, 100, 0.0)
     element.add(shape_functions, weight)
 
     return element

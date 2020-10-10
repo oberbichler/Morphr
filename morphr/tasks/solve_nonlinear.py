@@ -5,6 +5,7 @@ import time
 
 
 class SolveNonlinear(Task):
+    r_tolerance: float = 1e-6
     max_iterations: int = 100
     damping: float = 0
     auto_scale: bool = False
@@ -18,7 +19,13 @@ class SolveNonlinear(Task):
         for _, group_elements, _ in element_groups:
             elements.extend(group_elements)
 
-        problem = eq.Problem(elements, nb_threads=self.nb_threads)
+        start_time = time.perf_counter()
+
+        problem = eq.Problem(elements, nb_threads=self.nb_threads, grainsize=100)
+
+        end_time = time.perf_counter()
+        time_ellapsed = end_time - start_time
+        log.benchmark(f'Assembly done in {time_ellapsed:.2f} sec')
 
         log.info(f'{len(elements)} objectives')
         log.info(f'{problem.nb_variables} variables')
@@ -38,6 +45,9 @@ class SolveNonlinear(Task):
 
             problem.compute()
 
+            if np.linalg.norm(problem.df) < self.r_tolerance:
+                break
+
             if self.damping != 0:
                 problem.hm_add_diagonal(self.damping)
 
@@ -54,6 +64,10 @@ class SolveNonlinear(Task):
         h = np.empty_like(problem.hm_values, float)
 
         scaling_factors = np.empty(len(element_groups), float)
+
+        log.info(f'Problem consists of {len(element_groups)} groups')
+        for i, group in enumerate(element_groups):
+            log.info(f'  {i}: {group[0]} with {len(group[1])} elements')
 
         for iteration in range(self.max_iterations):
             log.info(f'Iteration {iteration+1}/{self.max_iterations}...')
@@ -102,6 +116,9 @@ class SolveNonlinear(Task):
             problem.f = f
             problem.df[:] = g
             problem.hm_values[:] = h
+
+            if np.linalg.norm(problem.df) < self.r_tolerance:
+                break
 
             if self.damping != 0:
                 problem.hm_add_diagonal(self.damping)

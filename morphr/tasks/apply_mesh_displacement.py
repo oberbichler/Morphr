@@ -4,33 +4,12 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_LOCATION = mo.PointLocation
+ELEMENT = eq.IgaPointLocation
 
 
 class ApplyMeshDisplacement(mo.Task):
+    max_distance: float = 0
     weight: float = 1
-
-    def line_projection(self, point, a, b):
-        dif = b - a
-        dot = np.dot(dif, dif)
-
-        if dot < 1e-14:
-            return a, 0.0
-
-        o = a
-        r = dif / dot
-        o2pt = point - o
-        t = np.dot(o2pt, r)
-
-        if t < 0:
-            return a, 0.0
-
-        if t > 1:
-            return b, 1.0
-
-        closest_point = o + dif * t
-
-        return closest_point, t
 
     def run(self, config, job, data, log):
         cad_model = data.get('cad_model', None)
@@ -38,6 +17,7 @@ class ApplyMeshDisplacement(mo.Task):
         displacements = data.get('displacements', None)
         faces = data.get('faces', None)
         model_tolerance = job.model_tolerance
+        max_distance = model_tolerance * 2 if self.max_distance <= 0 else self.max_distance
 
         nb_objectives = 0
 
@@ -46,22 +26,11 @@ class ApplyMeshDisplacement(mo.Task):
         data['nodes'] = data.get('nodes', {})
         elements = []
 
-        rtree = an.RTree3D(len(faces))
+        mapper = an.MeshMapper3D(vertices, faces)
 
-        for face in faces:
-            vabc = vertices[face]
+        projection_failed = 0
 
-            box_min = np.min(vabc, axis=0)
-            box_max = np.max(vabc, axis=0)
-
-            if self.debug:
-                cad_model.add(an.Box3D(box_min, box_max), r'{"layer": "Debug/ApplyMeshDisplacement/Boxes"}')
-
-            rtree.add(box_min, box_max)
-
-        rtree.finish()
-
-        for key, face in cad_model.of_type('BrepFace'):
+        for i, (key, face) in enumerate(cad_model.of_type('BrepFace')):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
 
             if surface_geometry_key not in data['nodes']:
@@ -76,73 +45,52 @@ class ApplyMeshDisplacement(mo.Task):
             else:
                 nodes = data['nodes'][surface_geometry_key]
 
-            for u, v, weight in an.integration_points(face, model_tolerance):
-                location = surface_geometry.point_at(u, v)
+            for span_u, span_v, integration_points in an.integration_points_with_spans(face, model_tolerance):
+                nonzero_indices = surface_geometry.nonzero_pole_indices_at_span(span_u, span_v)
 
-                if self.debug:
-                    cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
-
-                indices = rtree.by_point(location, model_tolerance * 2)
-
-                min_distance2 = float('inf')
-                min_location = None
-                min_parameter = None
-                min_face = None
-
-                for index in indices:
-                    a, b, c = faces[index]
-
-                    va, vb, vc = vertices[[a, b, c]]
-
-                    closest_point, parameter = an.Triangle3D.projection(location, va, vb, vc)
-
-                    if np.min(parameter) < 0 or np.max(parameter) > 1:
-                        continue
-
-                    d = closest_point - location
-                    distance2 = d.dot(d)
-
-                    if distance2 > min_distance2:
-                        continue
-
-                    min_distance2 = distance2
-                    min_location = closest_point
-                    min_parameter = parameter
-                    min_face = index
-
-                    if distance2 < model_tolerance**2:
-                        break
-
-                if min_face is None:
-                    log.warning('Projection failed! Check model_tolerance.')
-                    continue
-
-                abc = faces[min_face]
-
-                dabc = displacements[abc]
-
-                displacement = min_parameter.dot(dabc)
-
-                nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
-
-                location_source = min_location
-                location_target = min_location + displacement
-
-                if self.debug:
-                    cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Source"}')
-                    cad_model.add(an.Point3D(location_target), r'{"layer": "Debug/ApplyMeshDisplacement/Target"}')
-                    cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementField"}')
-                    cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projection"}')
-
-                element = POINT_LOCATION(nodes[nonzero_indices])
-                element.add(shape_functions, location_target, weight * self.weight)
+                element = ELEMENT(nodes[nonzero_indices])
                 elements.append(element)
 
-                nb_objectives += 1
+                for u, v, weight in integration_points:
+                    location = surface_geometry.point_at(u, v)
+
+                    if self.debug:
+                        cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/IntegrationPoints"}')
+
+                    success, min_location, (min_face, min_parameter), _ = mapper.map(location, max_distance)
+
+                    if not success:
+                        cad_model.add(an.Point3D(location), r'{"layer": "Debug/ApplyMeshDisplacement/Failed"}')
+                        projection_failed += 1
+                        continue
+
+                    abc = faces[min_face]
+
+                    dabc = displacements[abc]
+
+                    displacement = np.dot(min_parameter, dabc)
+
+                    n, shape_functions = surface_geometry.shape_functions_at(u, v, 0)
+
+                    location_source = min_location
+                    location_target = min_location + displacement
+
+                    if self.debug:
+                        cad_model.add(an.Point3D(location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Source"}')
+                        cad_model.add(an.Point3D(location_target), r'{"layer": "Debug/ApplyMeshDisplacement/Target"}')
+                        cad_model.add(an.Line3D(location_source, location_target), r'{"layer": "Debug/ApplyMeshDisplacement/DisplacementField"}')
+                        cad_model.add(an.Line3D(location, location_source), r'{"layer": "Debug/ApplyMeshDisplacement/Projection"}')
+
+                    element.add(shape_functions, location_target, weight * self.weight)
+
+                    nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
         data['elements'].append(('MeshDisplacement', elements, self.weight))
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        if projection_failed > 0:
+            log.warning(f'Projection failed for {projection_failed} points')
+
+        log.info(f'{len(elements)} elements with {nb_objectives} new objectives')

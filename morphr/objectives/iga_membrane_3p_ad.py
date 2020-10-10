@@ -1,15 +1,17 @@
 import eqlib as eq
+import hyperjet as hj
 import numpy as np
-from morphr.objectives.utility import evaluate_ref, evaluate_act, evaluate_act_geometry_hj, normalized
+from morphr.objectives.utility import evaluate_ref, evaluate_act_geometry_hj, normalized
 
 
-class Shell3P(eq.Objective):
-    def __init__(self, nodes, thickness, youngs_modulus, poissons_ratio):
+class IgaMembrane3PAD(eq.Objective):
+    def __init__(self, nodes, thickness, youngs_modulus, poissons_ratio, prestress=None):
         eq.Objective.__init__(self)
         self.nodes = np.asarray(nodes, object)
         self.thickness = float(thickness)
         self.youngs_modulus = float(youngs_modulus)
         self.poissons_ratio = float(poissons_ratio)
+        self.prestress = np.zeros(3) if prestress is None else np.asarray(prestress)
 
         variables = []
         for node in nodes:
@@ -22,12 +24,6 @@ class Shell3P(eq.Objective):
             [0, 0, (1.0 - poissons_ratio) / 2.0],
         ]) * youngs_modulus * thickness / (1.0 - np.power(poissons_ratio, 2))
 
-        self.db = np.array([
-            [1.0, poissons_ratio, 0],
-            [poissons_ratio, 1.0, 0],
-            [0, 0, (1.0 - poissons_ratio) / 2.0],
-        ]) * youngs_modulus * np.power(thickness, 3) / (12.0 * (1.0 - np.power(poissons_ratio, 2)))
-
         self.data = []
 
     def add(self, shape_functions, weight):
@@ -37,18 +33,11 @@ class Shell3P(eq.Objective):
         ref_a1 = evaluate_ref(self.nodes, shape_functions[1])
         ref_a2 = evaluate_ref(self.nodes, shape_functions[2])
 
-        ref_a1_1 = evaluate_ref(self.nodes, shape_functions[3])
-        ref_a1_2 = evaluate_ref(self.nodes, shape_functions[4])
-        ref_a2_2 = evaluate_ref(self.nodes, shape_functions[5])
-
         ref_a11 = np.dot(ref_a1, ref_a1)
         ref_a12 = np.dot(ref_a1, ref_a2)
         ref_a22 = np.dot(ref_a2, ref_a2)
 
-        ref_a3 = normalized(np.cross(ref_a1, ref_a2))
-
         ref_a = np.array([ref_a11, ref_a22, ref_a12])
-        ref_b = np.dot([ref_a1_1, ref_a1_2, ref_a2_2], ref_a3)
 
         e1 = ref_a1 / np.linalg.norm(ref_a1)
         e2 = ref_a2 - np.dot(ref_a2, e1) * e1
@@ -72,30 +61,19 @@ class Shell3P(eq.Objective):
             [2 * eg11 * eg21, 2 * eg12 * eg22, 2 * (eg11 * eg22 + eg12 * eg21)],
         ])
 
-        self.data.append((shape_functions, ref_a, ref_b, tm, weight))
+        self.data.append((shape_functions, ref_a, tm, weight))
 
     def compute(self, g, h):
         p = 0
 
-        for shape_functions, ref_a, ref_b, tm, weight in self.data:
+        for shape_functions, ref_a, tm, weight in self.data:
             act_a1 = evaluate_act_geometry_hj(self.nodes, shape_functions[1])
             act_a2 = evaluate_act_geometry_hj(self.nodes, shape_functions[2])
 
-            act_a1_1 = evaluate_act_geometry_hj(self.nodes, shape_functions[3])
-            act_a1_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[4])
-            act_a2_2 = evaluate_act_geometry_hj(self.nodes, shape_functions[5])
-
-            act_a3 = np.cross(act_a1, act_a2)
-            act_a3 /= np.linalg.norm(act_a3)
-
             act_a = np.array([np.dot(act_a1, act_a1), np.dot(act_a2, act_a2), np.dot(act_a1, act_a2)])
-            act_b = np.dot([act_a1_1, act_a1_2, act_a2_2], act_a3)
 
             eps = np.dot(tm, act_a - ref_a) / 2
-            kap = np.dot(tm, act_b - ref_b)
 
-            p += (np.dot(eps, np.dot(self.dm, eps)) + np.dot(kap, np.dot(self.db, kap))) * weight
+            p += np.dot(eps, np.add(np.dot(self.dm, eps), self.prestress)) * weight
 
-        g[:] = p.g / 2
-        h[:] = p.h / 2
-        return p.f / 2
+        return hj.explode(0.5 * p, g, h)

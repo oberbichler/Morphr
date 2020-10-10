@@ -1,4 +1,4 @@
-from morphr.objectives.point_node_coupling import PointNodeCoupling
+from morphr import IgaPointNodeCouplingAD
 import pytest
 import eqlib as eq
 from numpy.testing import assert_almost_equal
@@ -35,7 +35,7 @@ def element():
 
     weight = DATA['weight']
 
-    return PointNodeCoupling(nodes, shape_functions, target_node, weight)
+    return IgaPointNodeCouplingAD(nodes, shape_functions, target_node, weight)
 
 
 def test_element(element):

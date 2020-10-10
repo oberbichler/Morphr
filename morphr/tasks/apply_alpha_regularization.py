@@ -4,7 +4,7 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-POINT_NODE_COUPLING = mo.PointNodeCoupling
+POINT_NODE_COUPLING = mo.IgaPointNodeCouplingAD
 
 
 class ApplyAlphaRegularization(mo.Task):
@@ -54,4 +54,4 @@ class ApplyAlphaRegularization(mo.Task):
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        log.info(f'{len(elements)} elements with {nb_objectives} new objectives')

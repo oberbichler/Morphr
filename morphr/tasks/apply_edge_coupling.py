@@ -6,11 +6,12 @@ import numpy as np
 
 from typing import Dict, Union
 
-POINT_DISTANCE = mo.PointDistance
-NORMAL_DISTANCE = mo.RotationCoupling  # mo.RotationCoupling  # mo.NormalDistance
+POINT_DISTANCE = eq.IgaPointDistanceAD
+NORMAL_DISTANCE = eq.IgaRotationCouplingAD
 
 
 class ApplyEdgeCoupling(mo.Task):
+    projection_tolerance: float = 1e-8
     weight: Union[float, Dict[str, float]] = 1.0
 
     def run(self, config, job, data, log):
@@ -49,7 +50,7 @@ class ApplyEdgeCoupling(mo.Task):
 
                 nurbs_surface_nodes_a = np.array(nurbs_surface_nodes, object)
 
-                nodes[nurbs_surface_a] = nurbs_surface_nodes
+                nodes[nurbs_surface_a] = nurbs_surface_nodes_a
             else:
                 nurbs_surface_nodes_a = nodes[nurbs_surface_a]
 
@@ -61,11 +62,11 @@ class ApplyEdgeCoupling(mo.Task):
 
                 nurbs_surface_nodes_b = np.array(nurbs_surface_nodes, object)
 
-                nodes[nurbs_surface_b] = nurbs_surface_nodes
+                nodes[nurbs_surface_b] = nurbs_surface_nodes_b
             else:
                 nurbs_surface_nodes_b = nodes[nurbs_surface_b]
 
-            integration_points_a, integration_points_b = an.integration_points(edge, tolerance=model_tolerance)
+            integration_points_a, integration_points_b = an.integration_points(edge, tolerance=self.projection_tolerance, tessellation_tolerance=model_tolerance)
 
             for (t_a, weight), (t_b, _) in zip(integration_points_a, integration_points_b):
                 u_a, v_a = trim_a.curve_geometry.data.point_at(t_a)
@@ -86,16 +87,12 @@ class ApplyEdgeCoupling(mo.Task):
 
                 if weight_rotation != 0:
                     _, axis = trim_a.curve_3d.derivatives_at(t_a, order=1)
-                    axis /= np.linalg.norm(axis)
 
                     element = NORMAL_DISTANCE(element_nodes_a, element_nodes_b)
-                    element.add(shape_functions_a, shape_functions_b, axis=axis, weight=weight * weight_rotation)
+                    element.add(shape_functions_a, shape_functions_b, axis, weight=weight * weight_rotation)
                     normal_distance_group.append(element)
 
                     nb_objectives += 1
-
-                    if self.debug:
-                        cad_model.add(an.Point3D(element.act_b), r'{"layer": "Debug/ApplyEdgeCoupling/RotationAxis"}')
 
                 if self.debug:
                     point_a = nurbs_surface_a.point_at(u_a, v_a)
@@ -112,8 +109,8 @@ class ApplyEdgeCoupling(mo.Task):
             data['elements'].append(('DisplacementCoupling', point_distance_group, weight_displacement))
 
         if weight_rotation != 0:
-            data['elements'].append(('RotationCoupling', normal_distance_group, weight_rotation))
+            data['elements'].append(('IgaRotationCouplingAD', normal_distance_group, weight_rotation))
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        log.info(f'{len(point_distance_group) + len(normal_distance_group)} with {nb_objectives} new objectives')

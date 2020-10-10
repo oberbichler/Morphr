@@ -36,7 +36,7 @@ class Logger:
         print(text)
 
     def warning(self, text):
-        print(Fore.RED + text + Style.RESET_ALL)
+        print(Fore.MAGENTA + text + Style.RESET_ALL)
 
     def benchmark(self, text):
         if self.info_level < 10:

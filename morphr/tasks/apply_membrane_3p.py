@@ -4,12 +4,13 @@ import anurbs as an
 import eqlib as eq
 import numpy as np
 
-REDUCED_SHELL_3P = mo.ReducedShell3P
+ELEMENT = eq.IgaMembrane3PAD
 
 
-class ApplyReducedShell3P(mo.Task):
-    membrane_stiffness: float
-    bending_stiffness: float
+class ApplyMembrane3P(mo.Task):
+    thickness: float
+    youngs_modulus: float
+    poissons_ratio: float
     weight: float = 1
 
     def run(self, config, job, data, log):
@@ -22,6 +23,10 @@ class ApplyReducedShell3P(mo.Task):
 
         data['nodes'] = data.get('nodes', {})
         elements = []
+
+        thickness = self.thickness
+        youngs_modulus = self.youngs_modulus
+        poissons_ratio = self.poissons_ratio
 
         for key, face in cad_model.of_type('BrepFace'):
             surface_geometry_key = surface_geometry = face.surface_geometry.data
@@ -36,19 +41,22 @@ class ApplyReducedShell3P(mo.Task):
             else:
                 nodes = data['nodes'][surface_geometry_key]
 
-            for u, v, weight in an.integration_points(face, model_tolerance):
-                nonzero_indices, shape_functions = surface_geometry.shape_functions_at(u, v, 2)
+            for span_u, span_v, integration_points in an.integration_points_with_spans(face, model_tolerance):
+                nonzero_indices = surface_geometry.nonzero_pole_indices_at_span(span_u, span_v)
 
-                element = REDUCED_SHELL_3P(nodes[nonzero_indices], self.membrane_stiffness, self.bending_stiffness)
-                element.add(shape_functions, weight)
-
+                element = ELEMENT(nodes[nonzero_indices], thickness, youngs_modulus, poissons_ratio)
                 elements.append(element)
 
-                nb_objectives += 1
+                for u, v, weight in integration_points:
+                    _, shape_functions = surface_geometry.shape_functions_at(u, v, 1)
+
+                    element.add(shape_functions, weight)
+
+                    nb_objectives += 1
 
         data['elements'] = data.get('elements', [])
-        data['elements'].append(('ReducedShell3P', elements, self.weight))
+        data['elements'].append(('Shell3P', elements, self.weight))
 
         # output
 
-        log.info(f'{nb_objectives} new objectives')
+        log.info(f'{len(elements)} elements with {nb_objectives} new objectives')

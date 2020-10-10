@@ -7,6 +7,9 @@ class ImportIbra(Task):
 
     def run(self, config, job, data, log):
         model = an.Model()
+
+        log.info(f'Read "{self.path}"...')
+
         model.load(self.path)
 
         data['cad_model'] = model
