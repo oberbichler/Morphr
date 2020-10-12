@@ -118,6 +118,7 @@ class SolveNonlinear(Task):
             problem.hm_values[:] = h
 
             if np.linalg.norm(problem.df) < self.r_tolerance:
+                log.info(f'rnorm = {np.linalg.norm(problem.df)}')
                 break
 
             if self.damping != 0:
