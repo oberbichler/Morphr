@@ -26,7 +26,7 @@ setup(
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@tum.de',
     install_requires=[
-        'anurbs==0.13.0',
+        'anurbs==0.14.0',
         'colorama==0.4.3',
         'click==7.1.2',
         'eqlib==0.37.1',
