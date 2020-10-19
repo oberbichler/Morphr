@@ -24,6 +24,7 @@ from morphr.tasks.import_displacement_field import ImportDisplacementField
 from morphr.tasks.import_ibra import ImportIbra
 from morphr.tasks.solve_nonlinear import SolveNonlinear
 
+import os
 
 __version__ = 'dev'
 
@@ -55,3 +56,5 @@ __all__ = [
     'ImportIbra',
     'SolveNonlinear',
 ]
+
+os.environ["KMP_WARNINGS"] = "0"
