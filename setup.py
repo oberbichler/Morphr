@@ -33,7 +33,7 @@ setup(
         'hyperjet==0.35.0',
         'meshio==4.0.16',
         'numpy==1.19.0',
-        'pydantic==1.5.1',
+        'pydantic==1.6.2',
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
