@@ -32,7 +32,7 @@ setup(
         'eqlib==0.37.1',
         'hyperjet==0.35.0',
         'meshio==4.0.16',
-        'numpy==1.19.0',
+        'numpy==1.22.0',
         'pydantic==1.5.1',
     ],
     setup_requires=['pytest-runner'],
